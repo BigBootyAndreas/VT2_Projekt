@@ -5,6 +5,9 @@ def path(person):
     if person == "Ali" or person == "ali":
         directory = r"C:\\Users\\Aljun\\Aalborg Universitet\\P8 - testfile_dont_delete\\"
         return directory
+    elif person == "Alis" or person == "alis":
+        directory = "C:\\Users\\Ali\\Aalborg Universitet\\P8 - testfile_dont_delete\\"
+        return directory
     elif person == "Sofus" or person == "Sofus":
         directory = ""
         return directory

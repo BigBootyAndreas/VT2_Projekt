@@ -8,7 +8,10 @@ import File_reader
 
 
 def main():
-    print(f"Welcome to TCM system {username}")
+    if dir:
+        print(f"Welcome to TCM system {username}")
+    else:
+        print("Invalid user, currently having problem defying user name.")
 
     # Ask the user to choose between IMU and Acoustic folders
     print("Choose a folder to open:")
@@ -33,8 +36,6 @@ def main():
     selected_file = list_and_select_files(subdirectory_path)
     if selected_file:
         print(f"You selected: {selected_file}")
-        # You can now open or process the selected file as needed
-    else:
-        print("Invalid user, currently having problem defying user name.")
+
 if __name__ == "__main__":
     main()

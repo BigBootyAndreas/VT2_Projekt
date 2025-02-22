@@ -1,31 +1,40 @@
 import os
 import pandas as pd
-from file_path import *
-import test_reader
+from user_dir_detection import *
+from subdir_data import find_subdirectory, list_and_select_files
+import File_reader
 
 
 
 
 def main():
-    print("Welcome to TCM system")
-    print("Please enter your name")
+    print(f"Welcome to TCM system {username}")
 
-    # Path til personen
-    while True:
-        person = input("Who is running the script: ")  # Get the name
-        directory = path(person)  # Get the path
+    # Ask the user to choose between IMU and Acoustic folders
+    print("Choose a folder to open:")
+    print("1. IMU Data")
+    print("2. Acoustic Data")
+    folder_choice = input("Enter your choice (1 or 2): ").strip()
 
-        if directory:  
-            print(f"You selected {person}. Data directory: {directory}")
-            print("Checking directory contents...")
-            files = [f for f in os.listdir(directory) if f.endswith(('.txt', '.csv', '.xlsx'))]
-            print("Files in directory:", files)
-            # Call the text reading function from the imported script
-            test_reader.read_text_file(directory)  
-            break  
+    if folder_choice == '1':
+        folder_name = 'IMU Data'
+    elif folder_choice == '2':
+        folder_name = 'Acoustic Data'
+    else:
+        print("Invalid choice. Exiting.")
+        return
 
-        else:
-            print("Invalid user, please try again.")
+    # Find the subdirectory
+    subdirectory_path = find_subdirectory(dir, folder_name)
+    if not subdirectory_path:
+        return
 
+    # List and select files from the chosen folder
+    selected_file = list_and_select_files(subdirectory_path)
+    if selected_file:
+        print(f"You selected: {selected_file}")
+        # You can now open or process the selected file as needed
+    else:
+        print("Invalid user, currently having problem defying user name.")
 if __name__ == "__main__":
     main()

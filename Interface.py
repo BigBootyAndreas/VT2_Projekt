@@ -31,7 +31,7 @@ def main():
     subdirectory_path = find_subdirectory(dir, folder_name)
     if not subdirectory_path:
         subdirectory_path2 = find_subdirectory(dir2, folder_name)
-    elif not subdirectory_path and not subdirectory_path2:
+    if not subdirectory_path and not subdirectory_path2:
         return
 
     # List and select files from the chosen folder

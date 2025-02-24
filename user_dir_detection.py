@@ -13,4 +13,4 @@ username = user_profile.split('\\')[-1]
 #print(f"The username is: {username}")
 
 #Pre defying directory path
-dir= f"C:\\Users\\{username}\\Aalborg Universitet\\P8 - testfile_dont_delete\\"
+dir= f"C:\\Users\\{username}\\Aalborg Universitet\\P8 - Product development\\Data\\"

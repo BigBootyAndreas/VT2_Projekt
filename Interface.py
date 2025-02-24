@@ -30,12 +30,12 @@ def main():
     # Find the subdirectory
     subdirectory_path = find_subdirectory(dir, folder_name)
     if not subdirectory_path:
-        subdirectory_path = find_subdirectory(dir2, folder_name)
-    if not subdirectory_path:
+        subdirectory_path2 = find_subdirectory(dir2, folder_name)
+    elif not subdirectory_path and not subdirectory_path2:
         return
 
     # List and select files from the chosen folder
-    selected_file = list_and_select_files(subdirectory_path)
+    selected_file = list_and_select_files(subdirectory_path) or list_and_select_files(subdirectory_path2)
     if selected_file:
         print(f"You selected: {selected_file}")
 

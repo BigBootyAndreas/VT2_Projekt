@@ -14,4 +14,4 @@ username = user_profile.split('\\')[-1]
 
 #Pre defying directory path
 dir= f"C:\\Users\\{username}\\Aalborg Universitet\\P8 - Product development\\Data\\"
-dir2=f"C:\\Users\\{username}\\Aalborg Universitet\\Projekt\\P8 - Product development\\Data\\"
+dir2=f"C:\\Users\\{username}\\Aalborg Universitet\\P8 - Projekt\\Product development\\Data\\"

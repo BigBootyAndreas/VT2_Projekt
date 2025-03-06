@@ -1,15 +1,16 @@
 import os
 import glob
+import csv
 
-def read_text_file(directory):
-    """Finds and reads the first .txt file in the directory."""
-    txt_files = glob.glob(os.path.join(directory, '*.txt'))  # Get all text files
+def read_csv_file(directory):
+    #Finds and reads the first csv file in the directory.
+    csv_files = glob.glob(os.path.join(directory, '*.csv'))
 
-    if not txt_files:
-        print("No text files found in the directory.")
+    if not csv_files:
+        print("No csv files found in the directory.")
         return
     
-    file_path = txt_files[0]  # Select the first text file found
+    file_path = csv_files[0]  # Select the first text file found
 
     try:
         with open(file_path, 'r', encoding='utf-8') as file:

@@ -2,10 +2,9 @@ import os
 import pandas as pd
 from user_dir_detection import *
 from subdir_data import find_subdirectory, list_and_select_files
-import File_reader
+from File_reader import *
 
 def main():
-
     if dir:
         print(f"Welcome to TCM system {username}")
     else:
@@ -42,15 +41,14 @@ def main():
     # Choose the valid path
     selected_path = subdirectory_path if subdirectory_path else subdirectory_path2
 
-    # Debug: Print the selected path
-    print(f"Selected path: {selected_path}")
-
     # List and select files from the chosen folder
     selected_file = list_and_select_files(selected_path)
 
     # Debug: Print the selected file
     if selected_file:
         print(f"You selected: {selected_file}")
+        # Read the selected CSV file
+        read_csv_file(selected_file)
     else:
         print("No file was selected.")
 

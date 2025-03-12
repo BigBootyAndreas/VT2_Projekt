@@ -48,7 +48,7 @@ def main():
     if selected_file:
         print(f"You selected: {selected_file}")
         # Read the selected CSV file
-        read_csv_file(selected_file)
+        read_csv_file(selected_file,folder_choice)
     else:
         print("No file was selected.")
 

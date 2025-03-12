@@ -1,8 +1,17 @@
 import threading
 from IMU import record_imu
 from MIC import record_audio
+from UPLOAD import upload_to_gcs
 
 def main():
+
+    tool = "reamer"
+    samplerate = 16000
+
+    record(samplerate, tool)
+
+
+def record(samplerate, tool):
 
     COUNTER_FILE = "counter.txt"
 
@@ -15,11 +24,15 @@ def main():
         print(f"Run {counter}: Data{data_set}")
     else:
         print(f"Run {counter}: Data{data_set}")
+    
+    channels = 1 #Mic channels (Only one is needed)
+    filename = f"sample_{counter}" #Filename of the both the NPZ and CSV files
 
-    samplerate = 16000
-    channels = 1
-    duration = 10
-    filename = f"sample_{counter}"
+    #Tool duration selection
+    if tool == "reamer":
+        duration = 90
+    else:
+        duration = 80
 
     # Create threads for concurrent recording
     audio_thread = threading.Thread(target=record_audio, args=(duration, samplerate, channels, filename))
@@ -36,6 +49,9 @@ def main():
     counter += 1
     with open(COUNTER_FILE, "w") as f:
         f.write(f"{counter} {data_set}")
+
+    #initialize the upload function.
+
 
 if __name__ == "__main__":
     main()

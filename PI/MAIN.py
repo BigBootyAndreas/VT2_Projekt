@@ -63,11 +63,11 @@ def record(samplerate, tool):
 
     #AUDIO
     print("Uploading NPZ files:")
-    upload_to_gcs(BUCKET_NAME, f"segments/{tool}/" + filename + r".npz", filename + r".npz", CREDENTIALS_FILE, filename )
+    upload_to_gcs(BUCKET_NAME, r"segments/audio" + filename + r".npz", f"audio/{tool}/" + filename + r".npz", CREDENTIALS_FILE, filename)
     
     #IMU
     print("Uploading CSV files:")
-    upload_to_gcs(BUCKET_NAME, f"segments/{tool}/" + filename + r".csv", filename + r".csv", CREDENTIALS_FILE, filename )
+    upload_to_gcs(BUCKET_NAME, r"segments/imu" + filename + r".csv", f"imu/{tool}/" + filename + r".csv", CREDENTIALS_FILE, filename)
 
 
 if __name__ == "__main__":

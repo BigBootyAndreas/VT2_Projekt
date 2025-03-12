@@ -13,7 +13,7 @@ def read_csv_file(file_path, folder_choice):
             return None  # Return None if the folder choice is invalid
 
         # Print the dataframe to check the content
-        print("DataFrame loaded successfully:")
+        print("DataFrame loaded successfully")
         #print(df.head()) 
     
         return df  

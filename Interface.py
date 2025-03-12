@@ -34,9 +34,7 @@ def main():
         subdirectory_path2 = None
 
     # If neither directory contains the subfolder, exit
-    if not subdirectory_path and not subdirectory_path2:
-        print(f"Subdirectory '{folder_name}' not found in the base directories.")
-        exit()
+    
 
     # Choose the valid path
     selected_path = subdirectory_path if subdirectory_path else subdirectory_path2

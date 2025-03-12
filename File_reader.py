@@ -13,7 +13,7 @@ def read_csv_file(file_path, folder_choice):
             return
 
         # Print the filtered rows
-        #print(df)
+        print(df)
 
     except Exception as e:
         print(f"Error reading file: {e}")

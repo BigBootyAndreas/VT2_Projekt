@@ -9,9 +9,7 @@ def find_subdirectory(dir, folder_name):
     subdirectory_path = os.path.join(dir, folder_name)
     if os.path.exists(subdirectory_path):
         return subdirectory_path
-    else:
-        print(f"Subdirectory '{folder_name}' not found in the base directory.")
-        return None
+    
 
 
 # Function to list and select files from a folder

@@ -3,6 +3,7 @@ import pandas as pd
 from user_dir_detection import *
 from subdir_data import find_subdirectory, list_and_select_files
 from File_reader import *
+from IMU_data import imu_processing
 
 def main():
     if dir:
@@ -48,7 +49,18 @@ def main():
     if selected_file:
         print(f"You selected: {selected_file}")
         # Read the selected CSV file
-        read_csv_file(selected_file,folder_choice)
+        df = read_csv_file(selected_file, folder_choice)
+        
+        if df is not None:  # Ensure df is valid before processing
+            if folder_choice == '1':
+                # Process IMU data
+                imu_processing(df)
+                
+            #elif folder_choice == '2':
+                # Process Acoustic data
+             #   acoustic_processing(df)
+        else:
+            print("Error: Dataframe is empty or could not be loaded.")
     else:
         print("No file was selected.")
 

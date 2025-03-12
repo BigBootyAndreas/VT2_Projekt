@@ -38,4 +38,4 @@ def record_imu(duration, filename):
             writer.writerow([name, age, city])
             time.sleep(0.1)  # Adjust the sleep time to control writing speed
 
-    print(CYELLOW + f"CSV file '{csv_filename}' generated successfully for {duration} seconds." + CEND)
+    print(f"IMU segment: '{csv_filename}' recorded and saved")

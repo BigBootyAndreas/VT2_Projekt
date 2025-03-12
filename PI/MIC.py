@@ -8,6 +8,7 @@ CYELLOW = '\033[93m'
 CGREEN = '\033[92m'
 CBLUE = '\033[94m'
 CRED = '\033[91m'
+CORANGE = '\033[0;33m'
 CBLINK = '\033[5m'
 CEND = '\033[0m'
 
@@ -21,12 +22,12 @@ def record_audio(duration, samplerate, channels, filename):
 
     sd.wait() # Wait until recording is finished
 
-    print(CBLUE + f"Recording finished. Size of recording: {recording.shape}" + CEND)
+    print(f"Recording finished: Size of recording: {recording.shape}")
 
     time_values = np.linspace(0, duration, len(recording))
 
     # Save segment data to file or any other storage method
-    print(CGREEN + f"Saving segment: {filename}" + CEND)
+    print(CGREEN + f"Saving segment: " + CEND + f"{filename}")
 
     # Add time values to array
     data = np.column_stack((time_values, recording))
@@ -39,4 +40,4 @@ def record_audio(duration, samplerate, channels, filename):
     # Add timestamp column to the data
     data_with_timestamp = np.column_stack((timestamps, data))
     np.savez_compressed("segments/audio/"+filename, a=data_with_timestamp)
-    print(CGREEN + f"Segment {filename} saved" + CEND)
+    print(f"Segment {filename} saved")

@@ -9,8 +9,6 @@ CRED = '\033[91m'
 CBLINK = '\033[5m'
 CEND = '\033[0m'
 
-BUCKET_NAME = "aau_vt1"
-CREDENTIALS_FILE = "euphoric-anchor-439706-k3-d5147822d8ac.json"
 #upload_thread = threading.Thread(target=upload_to_gcs, args=(BUCKET_NAME, r"segments/" + filename + r".npz",
 #    filename + r".npz", CREDENTIALS_FILE, filename))
 #upload_thread.start()

@@ -4,6 +4,7 @@ from user_dir_detection import *
 from subdir_data import find_subdirectory, list_and_select_files
 from File_reader import *
 from IMU_data import imu_processing
+from Acoustic_data import acoustic_processing
 
 def main():
     if dir:
@@ -56,9 +57,9 @@ def main():
                 # Process IMU data
                 imu_processing(df)
                 
-            #elif folder_choice == '2':
+            elif folder_choice == '2':
                 # Process Acoustic data
-             #   acoustic_processing(df)
+                acoustic_processing(df)
         else:
             print("Error: Dataframe is empty or could not be loaded.")
     else:

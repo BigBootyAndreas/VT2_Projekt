@@ -5,8 +5,7 @@ from subdir_data import find_subdirectory, list_and_select_files
 from File_reader import *
 from IMU_data import imu_processing
 from Acoustic_data import acoustic_processing
-from npz_cleaner import npz_rm
-from csv_compiler import csv_compiler
+
 
 def main():
     if dir:
@@ -52,16 +51,6 @@ def main():
     # Print the selected file
     if selected_file:
         print(f"You selected: {selected_file}")
-
-        # Read the selected CSV file
-        if selected_file.endswith(".npz"):
-            print("Detected .npz file. Converting to .csv...")
-            csv_compiler(selected_file)  # Convert .npz to .csv
-            npz_rm(selected_file)        # Delete the .npz file after conversion
-            print(f"Conversion and deletion complete for {selected_file}.")
-        
-        selected_file= selected_file.replace(".npz",".csv")
-        
 
         df = read_csv_file(selected_file, folder_choice)
         

@@ -4,6 +4,7 @@ from user_dir_detection import *
 from subdir_data import find_subdirectory, list_and_select_files
 from File_reader import *
 from IMU_data import imu_processing
+from Acoustic_data import acoustic_processing
 from npz_cleaner import npz_rm
 from csv_compiler import csv_compiler
 
@@ -69,9 +70,15 @@ def main():
                 # Process IMU data
                 imu_processing(df)
                 
-            #elif folder_choice == '2':
+            elif folder_choice == '2':
                 # Process Acoustic data
-             #   acoustic_processing(df)
+                stft_result, sr = acoustic_processing(df)
+                
+                # Ask if they want advanced analysis
+                do_advanced = input("Would you like to perform advanced spectral analysis? (y/n): ")
+                if do_advanced.lower() == 'y':
+                    from Acoustic_data import advanced_acoustic_analysis
+                    advanced_acoustic_analysis(df, stft_result, sr)
         else:
             print("Error: Dataframe is empty or could not be loaded.")
     else:

@@ -70,10 +70,8 @@ def main():
                 imu_processing(df)
                 
             #elif folder_choice == '2':
-                #NPZ compress
-               
                 # Process Acoustic data
-                #acoustic_processing(df)
+             #   acoustic_processing(df)
         else:
             print("Error: Dataframe is empty or could not be loaded.")
     else:

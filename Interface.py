@@ -59,7 +59,13 @@ def main():
                 
             elif folder_choice == '2':
                 # Process Acoustic data
-                acoustic_processing(df)
+                stft_result, sr = acoustic_processing(df)
+                
+                # Ask if they want advanced analysis
+                do_advanced = input("Would you like to perform advanced spectral analysis? (y/n): ")
+                if do_advanced.lower() == 'y':
+                    from Acoustic_data import advanced_acoustic_analysis
+                    advanced_acoustic_analysis(df, stft_result, sr)
         else:
             print("Error: Dataframe is empty or could not be loaded.")
     else:

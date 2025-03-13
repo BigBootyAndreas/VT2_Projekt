@@ -13,7 +13,7 @@ def find_subdirectory(dir, folder_name):
 
 
 # Function to list and select files from a folder
-def list_and_select_files(folder_path, file_extension=".csv"):
+def list_and_select_files(folder_path, file_extension=(".csv", ".npz")):
 
     if not os.path.exists(folder_path):
         print(f"Folder not found: {folder_path}")

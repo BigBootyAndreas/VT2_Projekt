@@ -4,6 +4,8 @@ from user_dir_detection import *
 from subdir_data import find_subdirectory, list_and_select_files
 from File_reader import *
 from IMU_data import imu_processing
+from npz_cleaner import npz_rm
+from csv_compiler import csv_compiler
 
 def main():
     if dir:
@@ -41,14 +43,25 @@ def main():
 
     # Choose the valid path
     selected_path = subdirectory_path if subdirectory_path else subdirectory_path2
-
+    
+    
     # List and select files from the chosen folder
     selected_file = list_and_select_files(selected_path)
 
-    # Debug: Print the selected file
+    # Print the selected file
     if selected_file:
         print(f"You selected: {selected_file}")
+
         # Read the selected CSV file
+        if selected_file.endswith(".npz"):
+            print("Detected .npz file. Converting to .csv...")
+            csv_compiler(selected_file)  # Convert .npz to .csv
+            npz_rm(selected_file)        # Delete the .npz file after conversion
+            print(f"Conversion and deletion complete for {selected_file}.")
+        
+        selected_file= selected_file.replace(".npz",".csv")
+        
+
         df = read_csv_file(selected_file, folder_choice)
         
         if df is not None:  # Ensure df is valid before processing
@@ -57,8 +70,10 @@ def main():
                 imu_processing(df)
                 
             #elif folder_choice == '2':
+                #NPZ compress
+               
                 # Process Acoustic data
-             #   acoustic_processing(df)
+                #acoustic_processing(df)
         else:
             print("Error: Dataframe is empty or could not be loaded.")
     else:

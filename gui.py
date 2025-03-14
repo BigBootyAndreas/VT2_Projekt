@@ -7,6 +7,48 @@ import threading
 import time
 import pandas as pd
 
+class Variables:
+    """
+    Class for initialising, setting and getting Variables.
+    When instanced in global space, then every other scope can access the Variables.
+    """
+
+    def __init__(self):
+        
+        # contains name of tool in use
+        self.current_tool = "Reamer 20"
+        
+        # contains name of current process
+        self.current_job = "Milling"
+        
+        # contains tool life specified by supplier
+        self.spec_toollife = "200 CT"
+
+        self.job_time_remaining = 1200
+
+        # contains estimated tool life in seconds, initially same as specified
+        self.est_toollife = 12345
+
+        # bool value containing machine running status
+        self.machine_running = 0
+
+vars = Variables()
+
+def seconds_to_hms(seconds):
+    if seconds >= 3600:
+        hours, seconds = divmod(seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+        return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+    else:
+        minutes, seconds = divmod(seconds, 60)
+        return f"{int(minutes):02}:{int(seconds):02}"
+
+def check_machine_status(status):
+    if status == 1:
+        return "Running"
+    else:
+        return "Idle"
+
 # Load Data
 imu_df = pd.read_csv("IMU_data.csv", names=["Index", "Accel_X", "Accel_Y", "Accel_Z", "Timestamp"])
 acoustic_df = pd.read_csv("acoustic_data.csv", delimiter="\t", names=["RawData"])
@@ -48,25 +90,25 @@ app.grid_rowconfigure(1, weight=2, uniform="row")
 # Tool Information (Top Left)
 tool_info_frame = ctk.CTkFrame(app, corner_radius=20, fg_color="#1a1a1a", )
 tool_info_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-tool_label = ctk.CTkLabel(tool_info_frame, text="Tool: Reamer 20", font=("Arial", 22, "bold"))
+tool_label = ctk.CTkLabel(tool_info_frame, text=f"Tool: {vars.current_tool}", font=("Arial", 22, "bold"))
 tool_label.pack(pady=5)
-life_label = ctk.CTkLabel(tool_info_frame, text="Spec. Tool Life: 200 CT", font=("Arial", 18))
+life_label = ctk.CTkLabel(tool_info_frame, text=f"Spec. Tool Life: {vars.spec_toollife}", font=("Arial", 18))
 life_label.pack(pady=5)
-job_label = ctk.CTkLabel(tool_info_frame, text="Current Job: Rimming", font=("Arial", 18))
+job_label = ctk.CTkLabel(tool_info_frame, text=f"Current Job: {vars.current_job}", font=("Arial", 18))
 job_label.pack(pady=5)
-time_label = ctk.CTkLabel(tool_info_frame, text="Remaining Time: 20 min", font=("Arial", 18))
+time_label = ctk.CTkLabel(tool_info_frame, text=f"Job Time Remaining: {seconds_to_hms(vars.job_time_remaining)}", font=("Arial", 18))
 time_label.pack(pady=5)
-status_label = ctk.CTkLabel(tool_info_frame, text="Running", fg_color="green", width=140, height=140, corner_radius=70, font=("Arial", 22, "bold"))
+status_label = ctk.CTkLabel(tool_info_frame, text=f"{check_machine_status(vars.machine_running)}", fg_color="green", width=140, height=140, corner_radius=70, font=("Arial", 22, "bold"))
 status_label.pack(pady=20)
 
 # Estimated Tool Life (Top Right)
 tool_life_frame = ctk.CTkFrame(app, corner_radius=20, fg_color="#1a1a1a", )
 tool_life_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-countdown_label = ctk.CTkLabel(tool_life_frame, text="Remaining: 20:43", text_color="red", font=("Arial", 24, "bold"))
+countdown_label = ctk.CTkLabel(tool_life_frame, text=f"Est. Toollife Remaining: \n {seconds_to_hms(vars.est_toollife)}", text_color="red", font=("Arial", 24, "bold"))
 countdown_label.pack(pady=10)
 life_progress = ctk.CTkProgressBar(tool_life_frame, width=350, height=25)
 life_progress.pack(pady=15, fill="x")
-life_progress.set(0.25)  # Example progress (25% tool life used)
+life_progress.set(0.80)  # Example progress (80% tool life used)
 progress_labels = tk.Frame(tool_life_frame)
 progress_labels.pack()
 tk.Label(progress_labels, text="0%", font=("Arial", 16)).pack(side="left", padx=10)
@@ -108,28 +150,19 @@ def update_graphs():
         amplitude_values = acoustic_df["Amplitude"].iloc[max(0, acoustic_index-100):acoustic_index]
         
         # Plot Mean Line
-        ax_acoustic[0].axhline(y=amplitude_values.mean(), color='r', linestyle='--')#, label='Mean Amplitude')
+        ax_acoustic[0].axhline(y=amplitude_values.mean(), color='r', linestyle='--', label='Mean Amplitude')
         
         # Plot Signal
-        ax_acoustic[0].plot(data_range, amplitude_values, 'b')#, label="Acoustic Signal")
+        ax_acoustic[0].plot(data_range, amplitude_values, 'b', label="Acoustic Signal")
         
         # Fix x-axis limits
         if len(data_range) > 0:
             ax_acoustic[0].set_xlim(min(data_range), max(data_range))
         
-        ax_acoustic[0].legend()
-        ax_acoustic[0].set_xlabel("Index")
-        ax_acoustic[0].set_ylabel("Amplitude")
-        ax_acoustic[0].tick_params(axis='both', labelsize=8)
-        # ax_acoustic[0].axhline(y=acoustic_df['Amplitude'].iloc[max(0, acoustic_index-100):acoustic_index].mean(), color='r', linestyle='--', label='Mean')
-        # ax_acoustic[0].plot(
-    # range(max(0, acoustic_index-100), acoustic_index), 
-    #         acoustic_df["Amplitude"].iloc[max(0, acoustic_index-100):acoustic_index], 
-    #         'b', label="Acoustic Signal")
-        ax_acoustic[0].legend()
+        ax_acoustic[0].legend(loc="upper right", fontsize="6")
 
         ax_imu_x.clear()
-        ax_imu_x.set_xlabel("Index")
+        ax_imu_x.set_xticklabels([])
         ax_imu_x.set_ylabel("Accel X")
         ax_imu_x.tick_params(axis='both', labelsize=8)
         
@@ -138,25 +171,19 @@ def update_graphs():
         accel_x_values = imu_df["Accel_X"].iloc[max(0, imu_index-100):imu_index]
         
         # Plot Mean Line
-        ax_imu_x.axhline(y=accel_x_values.mean(), color='r', linestyle='--')#, label='Mean X')
+        ax_imu_x.axhline(y=accel_x_values.mean(), color='r', linestyle='--', label='Mean X')
         
         # Plot Signal
-        ax_imu_x.plot(data_range_x, accel_x_values, 'r')#, label="Accel X")
+        ax_imu_x.plot(data_range_x, accel_x_values, 'r', label="Accel X")
         
         # Fix x-axis limits
         if len(data_range_x) > 0:
             ax_imu_x.set_xlim(min(data_range_x), max(data_range_x))
-        
-        ax_imu_x.legend()
-        ax_imu_x.set_xlabel("Index")
-        ax_imu_x.set_ylabel("Accel X")
-        ax_imu_x.tick_params(axis='both', labelsize=8)
-        # ax_imu_x.axhline(y=imu_df['Accel_X'].iloc[max(0, imu_index-100):imu_index].mean(), color='r', linestyle='--', label='Mean')
-        # ax_imu_x.plot(imu_df.iloc[max(0, imu_index-100):imu_index]["Timestamp"], imu_df.iloc[max(0, imu_index-100):imu_index]["Accel_X"], 'r', label="X-Axis")
-        ax_imu_x.legend()
+
+        ax_imu_x.legend(loc="upper right", fontsize="6")
 
         ax_imu_y.clear()
-        ax_imu_y.set_xlabel("Index")
+        ax_imu_y.set_xticklabels([])
         ax_imu_y.set_ylabel("Accel Y")
         ax_imu_y.tick_params(axis='both', labelsize=8)
         
@@ -165,26 +192,20 @@ def update_graphs():
         accel_y_values = imu_df["Accel_Y"].iloc[max(0, imu_index-100):imu_index]
         
         # Plot Mean Line
-        ax_imu_y.axhline(y=accel_y_values.mean(), color='r', linestyle='--')#, label='Mean Y')
+        ax_imu_y.axhline(y=accel_y_values.mean(), color='r', linestyle='--', label='Mean Y')
         
         # Plot Signal
-        ax_imu_y.plot(data_range_y, accel_y_values, 'g')#, label="Accel Y")
+        ax_imu_y.plot(data_range_y, accel_y_values, 'g', label="Accel Y")
         
         # Fix x-axis limits
         if len(data_range_y) > 0:
             ax_imu_y.set_xlim(min(data_range_y), max(data_range_y))
         
-        ax_imu_y.legend()
-        ax_imu_y.set_xlabel("Index")
-        ax_imu_y.set_ylabel("Accel Y")
-        ax_imu_y.tick_params(axis='both', labelsize=8)
-        # ax_imu_y.axhline(y=imu_df['Accel_Y'].iloc[max(0, imu_index-100):imu_index].mean(), color='r', linestyle='--', label='Mean')
-        # ax_imu_y.plot(imu_df.iloc[max(0, imu_index-100):imu_index]["Timestamp"], imu_df.iloc[max(0, imu_index-100):imu_index]["Accel_Y"], 'g', label="Y-Axis")
-        ax_imu_y.legend()
+        ax_imu_y.legend(loc="upper right", fontsize="6")
 
         ax_imu_z.clear()
         ax_imu_z.set_xlabel("Index")
-        ax_imu_z.set_ylabel("Accel Z")
+        ax_imu_z.set_ylabel("Accel")
         ax_imu_z.tick_params(axis='both', labelsize=8)
         
         # Ensure proper range for x-axis
@@ -192,22 +213,16 @@ def update_graphs():
         accel_z_values = imu_df["Accel_Z"].iloc[max(0, imu_index-100):imu_index]
         
         # Plot Mean Line
-        ax_imu_z.axhline(y=accel_z_values.mean(), color='r', linestyle='--')#, label='Mean Z')
+        ax_imu_z.axhline(y=accel_z_values.mean(), color='r', linestyle='--', label='Mean Z')
         
         # Plot Signal
-        ax_imu_z.plot(data_range_z, accel_z_values, 'b')#, label="Accel Z")
+        ax_imu_z.plot(data_range_z, accel_z_values, 'b', label="Accel Z")
         
         # Fix x-axis limits
         if len(data_range_z) > 0:
             ax_imu_z.set_xlim(min(data_range_z), max(data_range_z))
         
-        ax_imu_z.legend()
-        ax_imu_z.set_xlabel("Index")
-        ax_imu_z.set_ylabel("Accel Z")
-        ax_imu_z.tick_params(axis='both', labelsize=8)
-        # ax_imu_z.axhline(y=imu_df['Accel_Z'].iloc[max(0, imu_index-100):imu_index].mean(), color='r', linestyle='--', label='Mean')
-        # ax_imu_z.plot(imu_df.iloc[max(0, imu_index-100):imu_index]["Timestamp"], imu_df.iloc[max(0, imu_index-100):imu_index]["Accel_Z"], 'b', label="Z-Axis")
-        ax_imu_z.legend()
+        ax_imu_z.legend(loc="upper right", fontsize="6")
         
         canvas_acoustic.draw()
         canvas_imu.draw()

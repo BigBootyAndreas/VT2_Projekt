@@ -30,7 +30,8 @@ class Variables:
         self.est_toollife = 12345
 
         # bool value containing machine running status
-        self.machine_running = 0
+        self.machine_running = 1
+        self.button_color = ""
 
 vars = Variables()
 
@@ -45,8 +46,12 @@ def seconds_to_hms(seconds):
 
 def check_machine_status(status):
     if status == 1:
+        # vars.machine_running = "Running"
+        vars.button_color = "green"
         return "Running"
     else:
+        # vars.machine_running = "Idle"
+        vars.button_color = "red"
         return "Idle"
 
 # Load Data
@@ -98,7 +103,7 @@ job_label = ctk.CTkLabel(tool_info_frame, text=f"Current Job: {vars.current_job}
 job_label.pack(pady=5)
 time_label = ctk.CTkLabel(tool_info_frame, text=f"Job Time Remaining: {seconds_to_hms(vars.job_time_remaining)}", font=("Arial", 18))
 time_label.pack(pady=5)
-status_label = ctk.CTkLabel(tool_info_frame, text=f"{check_machine_status(vars.machine_running)}", fg_color="green", width=140, height=140, corner_radius=70, font=("Arial", 22, "bold"))
+status_label = ctk.CTkLabel(tool_info_frame, text=f"{check_machine_status(vars.machine_running)}", fg_color=f"{vars.button_color}", width=140, height=140, corner_radius=70, font=("Arial", 22, "bold"))
 status_label.pack(pady=20)
 
 # Estimated Tool Life (Top Right)

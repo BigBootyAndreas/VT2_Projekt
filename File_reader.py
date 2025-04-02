@@ -1,19 +1,23 @@
-import os
-import glob
+import pandas as pd
 
-def read_text_file(directory):
-    """Finds and reads the first .txt file in the directory."""
-    txt_files = glob.glob(os.path.join(directory, '*.txt'))  # Get all text files
-
-    if not txt_files:
-        print("No text files found in the directory.")
-        return
-    
-    file_path = txt_files[0]  # Select the first text file found
-
+def read_csv_file(file_path, folder_choice):
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            print(f"\nReading file: {os.path.basename(file_path)}\n")
-            print(file.read())  # Print file content
+        if folder_choice == '1':
+            # For IMU Data skip the first row
+            df = pd.read_csv(file_path)
+        elif folder_choice == '2':
+            # For Acoustic Data, read different columns
+            df = pd.read_csv(file_path,skiprows=[0], usecols=[1,2])
+        else:
+            print("Invalid folder choice.")
+            return None  # Return None if the folder choice is invalid
+
+        # Print the dataframe to check the content
+        print("DataFrame loaded successfully")
+        #print(df.head()) 
+    
+        return df  
+    
     except Exception as e:
         print(f"Error reading file: {e}")
+        return None  # Return None if there's an error

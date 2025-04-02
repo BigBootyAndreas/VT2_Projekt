@@ -1,11 +1,12 @@
 import os
 import pandas as pd
 from user_dir_detection import *
-from subdir_data import find_subdirectory, list_and_select_files
-import File_reader
+from subdir_data import list_and_select_files, list_folders, list_subfolders
+from File_reader import *
+from IMU_data import imu_processing
+from Acoustic_data import acoustic_processing
 
 def main():
-
     if dir:
         print(f"Welcome to TCM system {username}")
     else:
@@ -26,11 +27,19 @@ def main():
         return
 
     # Find the subdirectory
-    subdirectory_path = find_subdirectory(dir, folder_name)
+    selected_folder = list_folders(dir)
+    if selected_folder:
+        subdirectory_path = list_subfolders(selected_folder)
+    else:
+        subdirectory_path = None
 
     # If not found in the first directory, try the second directory
     if not subdirectory_path:
-        subdirectory_path2 = find_subdirectory(dir2, folder_name)
+        selected_folder2 = list_folders(dir2)
+        if selected_folder2:
+            subdirectory_path2 = list_subfolders(selected_folder2)
+        else:
+            subdirectory_path2 = None
     else:
         subdirectory_path2 = None
 
@@ -41,16 +50,32 @@ def main():
 
     # Choose the valid path
     selected_path = subdirectory_path if subdirectory_path else subdirectory_path2
-
-    # Debug: Print the selected path
-    print(f"Selected path: {selected_path}")
-
+    
     # List and select files from the chosen folder
     selected_file = list_and_select_files(selected_path)
 
-    # Debug: Print the selected file
+    # Print the selected file
     if selected_file:
         print(f"You selected: {selected_file}")
+
+        df = read_csv_file(selected_file, folder_choice)
+        
+        if df is not None:  # Ensure df is valid before processing
+            if folder_choice == '1':
+                # Process IMU data
+                imu_processing(df)
+                
+            elif folder_choice == '2':
+                # Process Acoustic data
+                stft_result, sr = acoustic_processing(df)
+                
+                # Ask if they want advanced analysis
+                do_advanced = input("Would you like to perform advanced spectral analysis? (y/n): ")
+                if do_advanced.lower() == 'y':
+                    from Acoustic_data import advanced_acoustic_analysis
+                    advanced_acoustic_analysis(df, stft_result, sr)
+        else:
+            print("Error: Dataframe is empty or could not be loaded.")
     else:
         print("No file was selected.")
 

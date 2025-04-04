@@ -1,4 +1,4 @@
-import os
+import os 
 import pandas as pd
 from user_dir_detection import *
 from subdir_data import list_and_select_files, list_folders, list_subfolders
@@ -12,29 +12,17 @@ def main():
     else:
         print("Invalid user, currently having problem defining user name.")
 
-    # Ask the user to choose between IMU and Acoustic folders
-    print("Choose a folder to open:")
-    print("1. IMU Data")
-    print("2. Acoustic Data")
-    folder_choice = input("Enter your choice (1 or 2): ").strip()
-
-    if folder_choice == '1':
-        folder_name = 'IMU Data'
-    elif folder_choice == '2':
-        folder_name = 'Acoustic Data'
-    else:
-        print("Invalid choice. Exiting.")
+    # List and select the main folder (IMU Data or Acoustic Data)
+    selected_folder = list_folders(dir)
+    
+    if not selected_folder:
+        print("No valid folder selected. Exiting.")
         return
 
-    # Find the subdirectory
-    selected_folder = list_folders(dir)
-    if selected_folder:
-        subdirectory_path = list_subfolders(selected_folder)
-    else:
-        subdirectory_path = None
-
-    # If not found in the first directory, try the second directory
-    if not subdirectory_path:
+    # Find the subdirectory within the selected folder
+    subdirectory_path = list_subfolders(selected_folder)
+    
+    if not subdirectory_path: 
         selected_folder2 = list_folders(dir2)
         if selected_folder2:
             subdirectory_path2 = list_subfolders(selected_folder2)
@@ -43,33 +31,30 @@ def main():
     else:
         subdirectory_path2 = None
 
-    # If neither directory contains the subfolder, exit
     if not subdirectory_path and not subdirectory_path2:
-        print(f"Subdirectory '{folder_name}' not found in the base directories.")
+        print(f"Subdirectory not found in the base directories.")
         exit()
 
-    # Choose the valid path
     selected_path = subdirectory_path if subdirectory_path else subdirectory_path2
     
     # List and select files from the chosen folder
     selected_file = list_and_select_files(selected_path)
 
-    # Print the selected file
     if selected_file:
         print(f"You selected: {selected_file}")
-
+        
+        # Determine folder type (IMU or Acoustic) based on selection
+        folder_name = os.path.basename(selected_folder)
+        folder_choice = '1' if 'IMU' in folder_name else '2'
+        
         df = read_csv_file(selected_file, folder_choice)
         
-        if df is not None:  # Ensure df is valid before processing
+        if df is not None:
             if folder_choice == '1':
-                # Process IMU data
                 imu_processing(df)
-                
             elif folder_choice == '2':
-                # Process Acoustic data
                 stft_result, sr = acoustic_processing(df)
                 
-                # Ask if they want advanced analysis
                 do_advanced = input("Would you like to perform advanced spectral analysis? (y/n): ")
                 if do_advanced.lower() == 'y':
                     from Acoustic_data import advanced_acoustic_analysis

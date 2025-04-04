@@ -6,26 +6,30 @@ def list_folders(directory):
     if not os.path.exists(directory):
         print(f"Directory not found: {directory}")
         return None
-    
+
     folders = [f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))]
     
-    if not folders:
+    # Prioritize IMU Data before Acoustic Data
+    sorted_folders = sorted(folders, key=lambda x: (x != "IMU Data", x))
+
+    if not sorted_folders:
         print("No folders found.")
         return None
-    
+
     print("Available folders:")
-    for idx, folder in enumerate(folders):
+    for idx, folder in enumerate(sorted_folders):
         print(f"{idx + 1}. {folder}")
-    
+
     while True:
         try:
             choice = int(input("Enter the number corresponding to the folder: ")) - 1
-            if 0 <= choice < len(folders):
-                return os.path.join(directory, folders[choice])
+            if 0 <= choice < len(sorted_folders):
+                return os.path.join(directory, sorted_folders[choice])
             else:
                 print("Invalid selection. Please choose a valid folder number.")
         except ValueError:
             print("Invalid input. Please enter a number.")
+
 
 # Function to list and select a subfolder
 def list_subfolders(folder_path):

@@ -3,60 +3,53 @@ import pandas as pd
 import librosa
 import matplotlib.pyplot as plt
 
-# Hereunder the STFT for IMU is coded
+# STFT-based IMU processing
 def imu_processing(df):
-    # Extracting X, Y, Z accelerations and the epoch time from the dataframe
-    x_accel = df.iloc[:, 1].values  
-    y_accel = df.iloc[:, 2].values  
-    z_accel = df.iloc[:, 3].values  
-    time = df.iloc[:, 4].values     
+    print("Detected columns:", df.columns)
 
-    # Converting the epoch time to relative time 
+    # Use actual column names from the CSV
+    x_accel = df["X (g)"].astype(float).values
+    y_accel = df["Y (g)"].astype(float).values
+    z_accel = df["Z (g)"].astype(float).values
+    time = df["epoch"].astype(float).values
+
+    # Convert epoch to relative time
     time = time - time[0]
 
-    # Define the sampling rate 
-    sr = 100  
-   
-    # Function to compute and plot the Power Spectral Density (PSD) for IMU data
+    # Sampling rate
+    sr = 100
+
+    # Plot PSD function
     def plot_psd(accel, sr, axis_name, ax):
-        #Short-Time Fourier Transform (STFT) parameters
-        n_fft = 8192       # Number of points in FFT, higher means better frequency resolution
-        hop_length = 2048  # Number of points between FFTs (controls time resolution)
-        win_length = 8192  # Window length for each FFT computation, usually equal to n_fft
-        
-        # Performing STFT
+        n_fft = 8192
+        hop_length = 2048
+        win_length = 8192
+
         stft_imu = librosa.stft(accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-
-        # Calculate the magnitude and power from magnitude
         magnitude = np.abs(stft_imu)
-        power = np.mean(magnitude**2, axis=1)  # Averaging power over time (across columns)
+        power = np.mean(magnitude**2, axis=1)
 
-        #Frequency bins corresponding to the FFT results
         freq_bins = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
-
-        # Normalize power by frequency bin width to get the Power Spectral Density (PSD)
-        freq_resolution = sr / len(freq_bins)  # Frequency resolution
-        psd = power / freq_resolution  # PSD (Power Spectral Density)
+        freq_resolution = sr / len(freq_bins)
+        psd = power / freq_resolution
 
         ax.plot(freq_bins, psd, label=f'{axis_name}-axis', linewidth=2)
-        ax.set_xlabel('Frequency (Hz)')  # X-axis label (Frequency in Hz)
-        ax.set_ylabel('Power Spectral Density (G²/Hz)')  # Y-axis label (PSD in G²/Hz)
-        ax.set_title(f'PSD for {axis_name} Acceleration')  # Title for each subplot
-        ax.set_xscale('log')  # Logarithmic scale for X-axis (frequency)
-        ax.set_yscale('log')  # Logarithmic scale for Y-axis (power)
-        ax.grid(True, which='both', linestyle='--', linewidth=0.5)  # Grid with both major and minor lines
-        ax.legend()  # Legend for each axis label
+        ax.set_xlabel('Frequency (Hz)')
+        ax.set_ylabel('Power Spectral Density (G²/Hz)')
+        ax.set_title(f'PSD for {axis_name} Acceleration')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+        ax.legend()
 
-    # Create a figure with 3 subplots (one for each axis: X, Y, Z)
-    fig, axs = plt.subplots(3, 1, figsize=(10, 15))  # 3 rows, 1 column for subplots
+        # Limit frequency range to above 10 Hz (this will cut the plot at 10 Hz)
+        ax.set_xlim(left=1)  # Set the lower limit of the x-axis to 10 Hz
 
-    # Compute and plot PSD for X, Y, and Z axes in their respective subplots
-    plot_psd(x_accel, sr, 'X', axs[0])  # Plot X-axis PSD in the first subplot
-    plot_psd(y_accel, sr, 'Y', axs[1])  # Plot Y-axis PSD in the second subplot
-    plot_psd(z_accel, sr, 'Z', axs[2])  # Plot Z-axis PSD in the third subplot
+    # Plotting
+    fig, axs = plt.subplots(3, 1, figsize=(10, 15))
+    plot_psd(x_accel, sr, 'X', axs[0])
+    plot_psd(y_accel, sr, 'Y', axs[1])
+    plot_psd(z_accel, sr, 'Z', axs[2])
 
-    # Adjust layout with custom vertical spacing between subplots
-    plt.subplots_adjust(hspace=0.345)  # Set the vertical spacing between subplots
-
-    # Show the plots
-    plt.show()  # Display the plots
+    plt.subplots_adjust(hspace=0.345)
+    plt.show()

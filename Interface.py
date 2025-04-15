@@ -14,16 +14,28 @@ def main():
         return
 
     # Try to get folders from dir or dir2
-    folder_list = list_folders(dir) or list_folders(dir2)
+    folder_list = list_folders(dir) + list_folders(dir2)  # Combine both lists
     if not folder_list:
         print("No valid folder selected. Exiting.")
         return
 
-    # Auto-select the first folder found
-    base_path, folder_name = folder_list[0]
-    selected_folder = os.path.join(base_path, folder_name)
+    print("Available Folders:")
+    for idx, (base_path, folder_name) in enumerate(folder_list):
+        print(f"{idx + 1}. {folder_name}")
 
-    print(f"Selected folder: {selected_folder}")
+
+    while True:
+        try:
+            choice = int(input("Enter the number corresponding to the folder: ")) - 1
+            if 0 <= choice < len(folder_list):
+                base_path, folder_name = folder_list[choice]
+                selected_folder = os.path.join(base_path, folder_name)
+                print(f"Selected folder: {selected_folder}")
+                break
+            else:
+                print("Invalid selection. Please choose a valid folder number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
     # Try to get subfolders
     subdirectory_path = list_subfolders(selected_folder)

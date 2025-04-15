@@ -4,18 +4,17 @@ from user_dir_detection import dir, dir2  # Import both directories
 # Function to list folders in a given directory
 def list_folders(directory):
     if not os.path.exists(directory):
-        print(f"Directory not found: {directory}")
+        #print(f"Directory not found: {directory}")
         return []
 
     folders = [f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))]
     
-    # Prioritize IMU Data before Acoustic Data
-    sorted_folders = sorted(folders, key=lambda x: (x != "IMU Data", x))
-    
-    return [(directory, folder) for folder in sorted_folders]
+    # Return all folders without prioritizing one over the other
+    return [(directory, folder) for folder in folders]
 
 # Function to list and select a folder from multiple directories
 def select_folder():
+    # Combine folders from dir and dir2
     all_folders = list_folders(dir) + list_folders(dir2)
 
     if not all_folders:
@@ -24,8 +23,9 @@ def select_folder():
 
     print("Available folders:")
     for idx, (base_path, folder_name) in enumerate(all_folders):
-        print(f"{idx + 1}. {folder_name} (from {base_path})")
+        print(f"{idx + 1}. {folder_name}")  # Print only folder names
 
+    # Loop until a valid folder is selected
     while True:
         try:
             choice = int(input("Enter the number corresponding to the folder: ")) - 1

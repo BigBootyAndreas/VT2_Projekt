@@ -10,7 +10,6 @@ user_profile = os.environ['USERPROFILE']
 username = user_profile.split('\\')[-1]    
 
 # Now you have the username stored in the variable 'username'
-#print(f"The username is: {username}")
 
 #Pre defying directory path
 dir= f"C:\\Users\\{username}\\Aalborg Universitet\\P8 - Product development\\Data\\"

@@ -13,9 +13,8 @@ def acoustic_processing(df):
     df (pandas.DataFrame): DataFrame with columns for time and amplitude
     """
     # Extract time and amplitude from the dataframe
-    # Assuming column 0 is time and column 1 is amplitude based on File_reader.py
-    time = df.iloc[:, 0].values
-    amplitude = df.iloc[:, 1].values
+    time = df.iloc[:, 1].values
+    amplitude = df.iloc[:, 2].values
     
     # Calculate the sampling rate from the time data
     # This assumes the time column is in seconds and is uniformly sampled

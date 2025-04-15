@@ -31,7 +31,7 @@ def acoustic_processing(df):
     # Perform STFT
     stft_result = librosa.stft(amplitude, n_fft=n_fft, hop_length=hop_length)
     
-    # Convert to magnitude (log scale for better visualization)
+    # Convert to magnitude decibels
     stft_magnitude = librosa.amplitude_to_db(np.abs(stft_result), ref=np.max)
     
     # Create figure with multiple plots for different analyses
@@ -49,14 +49,14 @@ def acoustic_processing(df):
         stft_magnitude, 
         sr=sr, 
         hop_length=hop_length,
-        x_axis="time", 
-        y_axis="log", 
+        x_axis="Time", 
+        y_axis="Hz", 
         ax=axs[1]
     )
     fig.colorbar(img, ax=axs[1], format="%+2.0f dB", label="Amplitude (dB)")
     axs[1].set_title("Spectrogram (STFT)")
     axs[1].set_xlabel("Time")
-    axs[1].set_ylabel("Frequency (log scale)")
+    axs[1].set_ylabel("Frequency")
     
     # Add some additional analysis options
     def on_key(event):
@@ -83,8 +83,8 @@ def acoustic_processing(df):
                 stft_magnitude, 
                 sr=sr, 
                 hop_length=hop_length,
-                x_axis="time", 
-                y_axis="log", 
+                x_axis="Time", 
+                y_axis="Hz", 
                 ax=axs[1]
             )
             fig.colorbar(img, ax=axs[1], format="%+2.0f dB", label="Amplitude (dB)")

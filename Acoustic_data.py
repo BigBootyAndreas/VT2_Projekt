@@ -3,18 +3,13 @@ import pandas as pd
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
+from File_reader import *
+
 
 def acoustic_processing(df):
-    """
-    Process acoustic data from a DataFrame containing time and amplitude columns.
-    Performs Short-Time Fourier Transform (STFT) and displays the spectrogram.
-    
-    Parameters:
-    df (pandas.DataFrame): DataFrame with columns for time and amplitude
-    """
     # Extract time and amplitude from the dataframe
-    time = df.iloc[:, 1].values
-    amplitude = df.iloc[:, 2].values
+    time = df["Time"].values
+    amplitude = df["Amplitude"].values
     
     # Calculate the sampling rate from the time data
     # This assumes the time column is in seconds and is uniformly sampled
@@ -49,8 +44,8 @@ def acoustic_processing(df):
         stft_magnitude, 
         sr=sr, 
         hop_length=hop_length,
-        x_axis="Time", 
-        y_axis="Hz", 
+        x_axis="time", 
+        y_axis="linear", 
         ax=axs[1]
     )
     fig.colorbar(img, ax=axs[1], format="%+2.0f dB", label="Amplitude (dB)")
@@ -83,8 +78,8 @@ def acoustic_processing(df):
                 stft_magnitude, 
                 sr=sr, 
                 hop_length=hop_length,
-                x_axis="Time", 
-                y_axis="Hz", 
+                x_axis="time", 
+                y_axis="linear", 
                 ax=axs[1]
             )
             fig.colorbar(img, ax=axs[1], format="%+2.0f dB", label="Amplitude (dB)")

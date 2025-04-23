@@ -2,41 +2,72 @@ import socket
 import pandas as pd
 import json
 import time
+import threading
 
-HOST = '127.0.0.1'
-PORT = 65432
-
+# Load data
 imu_df = pd.read_csv("IMU_data.csv", names=["Index", "Accel_X", "Accel_Y", "Accel_Z", "Timestamp"])
 acoustic_df = pd.read_csv("acoustic_data.csv", delimiter="\t", names=["RawData"])
-
-# Split acoustic data
 acoustic_df[["Timestamp", "Frequency", "Amplitude"]] = acoustic_df["RawData"].str.split(',', expand=True)
 acoustic_df.drop(columns=["RawData", "Timestamp"], inplace=True)
 acoustic_df["Frequency"] = acoustic_df["Frequency"].astype(float)
 acoustic_df["Amplitude"] = acoustic_df["Amplitude"].astype(float)
 
-sampling_imu = 800
-imu_interval = 1 / sampling_imu
+# Sampling rates
+imu_hz = 800
+acoustic_hz = 16000
+imu_interval = 1 / imu_hz
+acoustic_batch_interval = 0.01  # 10ms batches
+acoustic_batch_size = int(acoustic_hz * acoustic_batch_interval)  # 160 samples
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((HOST, PORT))
-    s.listen()
-    print("Server is running, waiting for connection...")
+HOST = "0.0.0.0"
+PORT = 65432
 
-    conn, addr = s.accept()
-    with conn:
-        print(f"Connected by {addr}")
-        imu_index = 0
-        acoustic_index = 0
-
-        while imu_index < len(imu_df) and acoustic_index < len(acoustic_df):
-            data_packet = {
-                'imu': imu_df.iloc[imu_index].to_dict(),
-                'acoustic': acoustic_df.iloc[acoustic_index].to_dict()
+def imu_sender(conn):
+    index = 0
+    next_time = time.perf_counter()
+    while index < len(imu_df):
+        now = time.perf_counter()
+        if now >= next_time:
+            row = imu_df.iloc[index]
+            packet = {
+                "type": "imu",
+                "Accel_X": row["Accel_X"],
+                "Accel_Y": row["Accel_Y"],
+                "Accel_Z": row["Accel_Z"]
             }
-            conn.sendall(json.dumps(data_packet).encode('utf-8') + b'\n')
+            conn.sendall((json.dumps(packet) + "\n").encode())
+            index += 1
+            next_time += imu_interval
+        else:
+            time.sleep(0.0005)
 
-            imu_index += 1
-            acoustic_index += 1
+def acoustic_sender(conn):
+    index = 0
+    next_time = time.perf_counter()
+    while index < len(acoustic_df):
+        now = time.perf_counter()
+        if now >= next_time:
+            batch = acoustic_df.iloc[index:index+acoustic_batch_size]
+            packet = {
+                "type": "acoustic_batch",
+                "Amplitude": batch["Amplitude"].tolist()
+            }
+            conn.sendall((json.dumps(packet) + "\n").encode())
+            index += acoustic_batch_size
+            next_time += acoustic_batch_interval
+        else:
+            time.sleep(0.0005)
 
-            time.sleep(imu_interval)
+def main():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        print(f"Server listening on {HOST}:{PORT}")
+        conn, addr = s.accept()
+        with conn:
+            print(f"Connected by {addr}")
+            threading.Thread(target=imu_sender, args=(conn,), daemon=True).start()
+            acoustic_sender(conn)
+
+if __name__ == "__main__":
+    main()

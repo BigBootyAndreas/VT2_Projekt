@@ -18,7 +18,7 @@ from sklearn.metrics import (
 
 from data_preparation import collect_dataset_from_directory
 
-# 1) Define your pipelines + parameter grids
+# 1) Define pipelines + parameter grids
 svr_pipe = Pipeline([
     ("scaler", StandardScaler()),
     ("svr", SVR())

@@ -20,7 +20,6 @@ def imu_processing(df, plot_type="psd"):
     # Sampling rate
     sr = 100
 
-<<<<<<< HEAD
     if plot_type == "raw":
         # Plot raw data as subplots
         fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
@@ -28,13 +27,6 @@ def imu_processing(df, plot_type="psd"):
         axs[0].set_ylabel("Acceleration (g)")
         axs[0].set_title("Raw IMU Data - X-axis")
         axs[0].grid(True)
-=======
-    # Plot PSD function
-    def plot_psd(accel, sr, axis_name, ax):
-        n_fft = 8192 
-        hop_length = 2048
-        win_length = 8192
->>>>>>> a23c6103d93a7979132bd555a5c98bb93b23f90f
 
         axs[1].plot(id, y_accel, label="Y-axis", color="g")
         axs[1].set_ylabel("Acceleration (g)")

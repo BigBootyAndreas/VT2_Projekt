@@ -73,7 +73,22 @@ def main():
 
         if df is not None:
             if folder_choice == '1':
-                imu_processing(df)
+                print("Choose the type of plot:")
+                print("1. Raw Data")
+                print("2. Power Spectral Density (PSD)")
+                while True:
+                    try:
+                        plot_choice = int(input("Enter your choice (1 or 2): "))
+                        if plot_choice == 1:
+                            imu_processing(df, plot_type="raw")
+                            break
+                        elif plot_choice == 2:
+                            imu_processing(df, plot_type="psd")
+                            break
+                        else:
+                            print("Invalid choice. Please enter 1 or 2.")
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
             elif folder_choice == '2':
                 stft_result, sr = acoustic_processing(df)
 
@@ -88,3 +103,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

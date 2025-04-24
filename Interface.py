@@ -1,4 +1,4 @@
-import os
+import os 
 import pandas as pd
 from user_dir_detection import *
 from subdir_data import list_and_select_files, list_folders, list_subfolders
@@ -11,65 +11,72 @@ def main():
         print(f"Welcome to TCM system {username}")
     else:
         print("Invalid user, currently having problem defining user name.")
-
-    # Ask the user to choose between IMU and Acoustic folders
-    print("Choose a folder to open:")
-    print("1. IMU Data")
-    print("2. Acoustic Data")
-    folder_choice = input("Enter your choice (1 or 2): ").strip()
-
-    if folder_choice == '1':
-        folder_name = 'IMU Data'
-    elif folder_choice == '2':
-        folder_name = 'Acoustic Data'
-    else:
-        print("Invalid choice. Exiting.")
         return
 
-    # Find the subdirectory
-    selected_folder = list_folders(dir)
-    if selected_folder:
-        subdirectory_path = list_subfolders(selected_folder)
-    else:
-        subdirectory_path = None
+    # Try to get folders from dir or dir2
+    folder_list = list_folders(dir) + list_folders(dir2)  # Combine both lists
+    if not folder_list:
+        print("No valid folder selected. Exiting.")
+        return
 
-    # If not found in the first directory, try the second directory
+    print("Available Folders:")
+    for idx, (base_path, folder_name) in enumerate(folder_list):
+        print(f"{idx + 1}. {folder_name}")
+
+
+    while True:
+        try:
+            choice = int(input("Enter the number corresponding to the folder: ")) - 1
+            if 0 <= choice < len(folder_list):
+                base_path, folder_name = folder_list[choice]
+                selected_folder = os.path.join(base_path, folder_name)
+                print(f"Selected folder: {selected_folder}")
+                break
+            else:
+                print("Invalid selection. Please choose a valid folder number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    # Try to get subfolders
+    subdirectory_path = list_subfolders(selected_folder)
+
+    # If no subfolders found, try switching to dir2
     if not subdirectory_path:
-        selected_folder2 = list_folders(dir2)
-        if selected_folder2:
+        folder_list2 = list_folders(dir2)
+        if folder_list2:
+            base_path2, folder_name2 = folder_list2[0]
+            selected_folder2 = os.path.join(base_path2, folder_name2)
             subdirectory_path2 = list_subfolders(selected_folder2)
         else:
             subdirectory_path2 = None
     else:
         subdirectory_path2 = None
 
-    # If neither directory contains the subfolder, exit
-    if not subdirectory_path and not subdirectory_path2:
-        print(f"Subdirectory '{folder_name}' not found in the base directories.")
-        exit()
-
-    # Choose the valid path
+    # Final path to continue with
     selected_path = subdirectory_path if subdirectory_path else subdirectory_path2
-    
-    # List and select files from the chosen folder
+
+    if not selected_path:
+        print("Subdirectory not found in the base directories.")
+        return
+
+    # List and select files from the chosen subfolder
     selected_file = list_and_select_files(selected_path)
 
-    # Print the selected file
     if selected_file:
         print(f"You selected: {selected_file}")
 
+        # Determine folder type (IMU or Acoustic) based on name
+        folder_name_check = os.path.basename(selected_folder)
+        folder_choice = '1' if 'IMU' in folder_name_check else '2'
+
         df = read_csv_file(selected_file, folder_choice)
-        
-        if df is not None:  # Ensure df is valid before processing
+
+        if df is not None:
             if folder_choice == '1':
-                # Process IMU data
                 imu_processing(df)
-                
             elif folder_choice == '2':
-                # Process Acoustic data
                 stft_result, sr = acoustic_processing(df)
-                
-                # Ask if they want advanced analysis
+
                 do_advanced = input("Would you like to perform advanced spectral analysis? (y/n): ")
                 if do_advanced.lower() == 'y':
                     from Acoustic_data import advanced_acoustic_analysis

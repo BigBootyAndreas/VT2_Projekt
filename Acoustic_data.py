@@ -3,19 +3,13 @@ import pandas as pd
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
+from File_reader import *
+
 
 def acoustic_processing(df):
-    """
-    Process acoustic data from a DataFrame containing time and amplitude columns.
-    Performs Short-Time Fourier Transform (STFT) and displays the spectrogram.
-    
-    Parameters:
-    df (pandas.DataFrame): DataFrame with columns for time and amplitude
-    """
     # Extract time and amplitude from the dataframe
-    # Assuming column 0 is time and column 1 is amplitude based on File_reader.py
-    time = df.iloc[:, 0].values
-    amplitude = df.iloc[:, 1].values
+    time = df["Time"].values
+    amplitude = df["Amplitude"].values
     
     # Calculate the sampling rate from the time data
     # This assumes the time column is in seconds and is uniformly sampled
@@ -32,7 +26,7 @@ def acoustic_processing(df):
     # Perform STFT
     stft_result = librosa.stft(amplitude, n_fft=n_fft, hop_length=hop_length)
     
-    # Convert to magnitude (log scale for better visualization)
+    # Convert to magnitude decibels
     stft_magnitude = librosa.amplitude_to_db(np.abs(stft_result), ref=np.max)
     
     # Create figure with multiple plots for different analyses
@@ -51,13 +45,13 @@ def acoustic_processing(df):
         sr=sr, 
         hop_length=hop_length,
         x_axis="time", 
-        y_axis="log", 
+        y_axis="linear", 
         ax=axs[1]
     )
     fig.colorbar(img, ax=axs[1], format="%+2.0f dB", label="Amplitude (dB)")
     axs[1].set_title("Spectrogram (STFT)")
     axs[1].set_xlabel("Time")
-    axs[1].set_ylabel("Frequency (log scale)")
+    axs[1].set_ylabel("Frequency")
     
     # Add some additional analysis options
     def on_key(event):
@@ -85,7 +79,7 @@ def acoustic_processing(df):
                 sr=sr, 
                 hop_length=hop_length,
                 x_axis="time", 
-                y_axis="log", 
+                y_axis="linear", 
                 ax=axs[1]
             )
             fig.colorbar(img, ax=axs[1], format="%+2.0f dB", label="Amplitude (dB)")

@@ -7,7 +7,7 @@ def read_csv_file(file_path, folder_choice):
             df = pd.read_csv(file_path)
         elif folder_choice == '2':
             # For Acoustic Data, read different columns
-            df = pd.read_csv(file_path,skiprows=[0], usecols=[1,2])
+            df = pd.read_csv(file_path,skiprows=[0], usecols=[1,2], names=["Time","Amplitude"])
         else:
             print("Invalid folder choice.")
             return None  # Return None if the folder choice is invalid

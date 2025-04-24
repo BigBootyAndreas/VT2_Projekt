@@ -1,27 +1,37 @@
 import os
-from user_dir_detection import dir  # Assuming `dir` is the base directory
+from user_dir_detection import dir, dir2  # Import both directories
 
 # Function to list folders in a given directory
 def list_folders(directory):
     if not os.path.exists(directory):
-        print(f"Directory not found: {directory}")
-        return None
-    
+        #print(f"Directory not found: {directory}")
+        return []
+
     folders = [f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))]
     
-    if not folders:
-        print("No folders found.")
+    # Return all folders without prioritizing one over the other
+    return [(directory, folder) for folder in folders]
+
+# Function to list and select a folder from multiple directories
+def select_folder():
+    # Combine folders from dir and dir2
+    all_folders = list_folders(dir) + list_folders(dir2)
+
+    if not all_folders:
+        print("No folders found in either directory.")
         return None
-    
+
     print("Available folders:")
-    for idx, folder in enumerate(folders):
-        print(f"{idx + 1}. {folder}")
-    
+    for idx, (base_path, folder_name) in enumerate(all_folders):
+        print(f"{idx + 1}. {folder_name}")  # Print only folder names
+
+    # Loop until a valid folder is selected
     while True:
         try:
             choice = int(input("Enter the number corresponding to the folder: ")) - 1
-            if 0 <= choice < len(folders):
-                return os.path.join(directory, folders[choice])
+            if 0 <= choice < len(all_folders):
+                base_path, folder_name = all_folders[choice]
+                return os.path.join(base_path, folder_name)
             else:
                 print("Invalid selection. Please choose a valid folder number.")
         except ValueError:
@@ -77,8 +87,7 @@ def list_and_select_files(folder_path, file_extensions=(".csv", ".npz")):
 
 # Main execution
 if __name__ == "__main__":
-    base_folder = dir  # Base directory from user_dir_detection
-    selected_folder = list_folders(base_folder)
+    selected_folder = select_folder()
     if selected_folder:
         selected_subfolder = list_subfolders(selected_folder)
         if selected_subfolder:

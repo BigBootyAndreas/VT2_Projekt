@@ -21,7 +21,7 @@ def imu_processing(df):
 
     # Plot PSD function
     def plot_psd(accel, sr, axis_name, ax):
-        n_fft = 8192
+        n_fft = 8192 
         hop_length = 2048
         win_length = 8192
 

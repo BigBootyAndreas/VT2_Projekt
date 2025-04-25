@@ -97,15 +97,7 @@ def acoustic_processing(df):
 
 # Optional: Function for advanced analysis that can be added later
 def advanced_acoustic_analysis(df, stft_result=None, sr=None):
-    """
-    Perform advanced analysis on acoustic data.
-    This can be extended with additional signal processing techniques.
-    
-    Parameters:
-    df (pandas.DataFrame): DataFrame with columns for time and amplitude
-    stft_result: Pre-computed STFT (optional)
-    sr: Sampling rate (optional)
-    """
+   
     if stft_result is None or sr is None:
         stft_result, sr = acoustic_processing(df)
     

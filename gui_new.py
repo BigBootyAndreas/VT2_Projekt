@@ -103,7 +103,7 @@ def create_plot_frame(title, row, column, num_subplots=1):
 
 # Create Acoustic and IMU Graphs
 ax_acoustic, fig_acoustic, canvas_acoustic = create_plot_frame("Acoustic Data", 1, 0, 1)
-(ax_imu_x, ax_imu_y, ax_imu_z), fig_imu, canvas_imu = create_plot_frame("IMU Data", 1, 1, 3)
+(ax_imu_x, ax_imu_y, ax_imu_z), fig_imu, canvas_imu = create_plot_frame("Vibration Data", 1, 1, 3)
 
 # Update Graphs in Real-Time
 def update_acoustic():

@@ -89,48 +89,78 @@ app = ctk.CTk()
 app.title("CNC Tool Wear Monitor")
 app.geometry("1200x800")
 app.grid_columnconfigure((0, 1), weight=1, uniform="column")
-app.grid_rowconfigure(0, weight=1, uniform="row")
-app.grid_rowconfigure(1, weight=2, uniform="row")
+app.grid_rowconfigure(0, weight=2, uniform="row")
+app.grid_rowconfigure(1, weight=3, uniform="row")
 
 # Tool Information (Top Left)
 tool_info_frame = ctk.CTkFrame(app, corner_radius=20, fg_color="#1a1a1a", )
 tool_info_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-tool_label = ctk.CTkLabel(tool_info_frame, text=f"Tool: {vars.current_tool}", font=("Arial", 22, "bold"))
+
+# Use an internal frame to center contents vertically
+inner_frame = tk.Frame(tool_info_frame, bg="#1a1a1a")
+inner_frame.pack(expand=True)
+
+tool_label = ctk.CTkLabel(inner_frame, text=f"Tool: {vars.current_tool}", font=("Arial", 22, "bold"))
 tool_label.pack(pady=5)
-life_label = ctk.CTkLabel(tool_info_frame, text=f"Spec. Tool Life: {vars.spec_toollife}", font=("Arial", 18))
+
+life_label = ctk.CTkLabel(inner_frame, text=f"Spec. Tool Life: {vars.spec_toollife}", font=("Arial", 18))
 life_label.pack(pady=5)
-job_label = ctk.CTkLabel(tool_info_frame, text=f"Current Job: {vars.current_job}", font=("Arial", 18))
+
+job_label = ctk.CTkLabel(inner_frame, text=f"Current Job: {vars.current_job}", font=("Arial", 18))
 job_label.pack(pady=5)
-time_label = ctk.CTkLabel(tool_info_frame, text=f"Job Time Remaining: {seconds_to_hms(vars.job_time_remaining)}", font=("Arial", 18))
+
+time_label = ctk.CTkLabel(inner_frame, text=f"Job Time Remaining: {seconds_to_hms(vars.job_time_remaining)}", font=("Arial", 18))
 time_label.pack(pady=5)
-status_label = ctk.CTkLabel(tool_info_frame, text=f"{check_machine_status(vars.machine_running)}", fg_color=f"{vars.button_color}", width=140, height=140, corner_radius=70, font=("Arial", 22, "bold"))
+
+status_label = ctk.CTkLabel(inner_frame, text=f"{check_machine_status(vars.machine_running)}", fg_color=f"{vars.button_color}", width=140, height=140, corner_radius=70, font=("Arial", 22, "bold"))
 status_label.pack(pady=20)
+
 
 # Estimated Tool Life (Top Right)
 tool_life_frame = ctk.CTkFrame(app, corner_radius=20, fg_color="#1a1a1a", )
 tool_life_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-countdown_label = ctk.CTkLabel(tool_life_frame, text=f"Est. Toollife Remaining: \n {seconds_to_hms(vars.est_toollife)}", text_color="red", font=("Arial", 24, "bold"))
+
+# Internal frame to center content vertically
+life_inner_frame = tk.Frame(tool_life_frame, bg="#1a1a1a")
+life_inner_frame.pack(expand=True, fill="x")
+
+countdown_label = ctk.CTkLabel(life_inner_frame, text=f"Est. Toollife Remaining: \n {seconds_to_hms(vars.est_toollife)}", text_color="red", font=("Arial", 28, "bold"))
 countdown_label.pack(pady=10)
-life_progress = ctk.CTkProgressBar(tool_life_frame, width=350, height=25)
-life_progress.pack(pady=15, fill="x")
-life_progress.set(0.80)  # Example progress (80% tool life used)
-progress_labels = tk.Frame(tool_life_frame)
+
+life_progress = ctk.CTkProgressBar(life_inner_frame, width=350, height=25)
+life_progress.pack(pady=60, padx=20, fill="x", expand=True)
+life_progress.set(0.40)
+
+progress_labels = tk.Frame(life_inner_frame, bg="#1a1a1a")
 progress_labels.pack()
-tk.Label(progress_labels, text="0%", font=("Arial", 16)).pack(side="left", padx=10)
-tk.Label(progress_labels, text="100%", font=("Arial", 16)).pack(side="right", padx=10)
 
 # Live Data Graphs (Bottom Left & Bottom Right)
 def create_plot_frame(title, row, column, num_subplots=1):
-    frame = ctk.CTkFrame(app, corner_radius=20, fg_color="#1a1a1a", )
+    frame = ctk.CTkFrame(app, corner_radius=20, fg_color="#1a1a1a")
     frame.grid(row=row, column=column, sticky="nsew", padx=10, pady=10)
+    
     fig, axes = plt.subplots(num_subplots, 1, figsize=(5, 3))
-    canvas = FigureCanvasTkAgg(fig, master=frame)
-    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    
+    # Set dark background colors
+    fig.patch.set_facecolor("#1a1a1a")
+
+    fig.subplots_adjust(left=0.2, bottom=0.2)  # Adjust as needed (0.1–0.2 is typical)
+
     if num_subplots == 1:
         axes = [axes]
     for ax in axes:
-        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.set_facecolor("#1a1a1a")  # Inner plot background
+        ax.tick_params(colors='white')  # Tick color
+        ax.xaxis.label.set_color('white')  # X label color
+        ax.yaxis.label.set_color('white')  # Y label color
+        ax.title.set_color('white')  # Title color
+        ax.grid(True, linestyle="--", alpha=0.6, color="gray")
+
+    canvas = FigureCanvasTkAgg(fig, master=frame)
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    
     return axes, fig, canvas
+
 
 # Acoustic & IMU Graphs
 ax_acoustic, fig_acoustic, canvas_acoustic = create_plot_frame("Acoustic Data", 1, 0, 1)
@@ -146,8 +176,8 @@ def update_graphs():
     start_time = time.time()
     while imu_index < len(imu_df) and acoustic_index < len(acoustic_df):
         ax_acoustic[0].clear()
-        ax_acoustic[0].set_xlabel("Index")
-        ax_acoustic[0].set_ylabel("Amplitude")
+        ax_acoustic[0].set_xlabel("Index", color='white')
+        ax_acoustic[0].set_ylabel("Amplitude", color='white')
         ax_acoustic[0].tick_params(axis='both', labelsize=8)
         
         # Ensure proper range for x-axis
@@ -155,7 +185,7 @@ def update_graphs():
         amplitude_values = acoustic_df["Amplitude"].iloc[max(0, acoustic_index-100):acoustic_index]
         
         # Plot Mean Line
-        ax_acoustic[0].axhline(y=amplitude_values.mean(), color='r', linestyle='--', label='Mean Amplitude')
+        ax_acoustic[0].axhline(y=amplitude_values.mean(), color='orange', linestyle='--', label='Mean Amplitude')
         
         # Plot Signal
         ax_acoustic[0].plot(data_range, amplitude_values, 'b', label="Acoustic Signal")
@@ -168,7 +198,7 @@ def update_graphs():
 
         ax_imu_x.clear()
         ax_imu_x.set_xticklabels([])
-        ax_imu_x.set_ylabel("Accel X")
+        ax_imu_x.set_ylabel("Accel X", color='white')
         ax_imu_x.tick_params(axis='both', labelsize=8)
         
         # Ensure proper range for x-axis
@@ -176,7 +206,7 @@ def update_graphs():
         accel_x_values = imu_df["Accel_X"].iloc[max(0, imu_index-100):imu_index]
         
         # Plot Mean Line
-        ax_imu_x.axhline(y=accel_x_values.mean(), color='r', linestyle='--', label='Mean X')
+        ax_imu_x.axhline(y=accel_x_values.mean(), color='orange', linestyle='--', label='Mean X')
         
         # Plot Signal
         ax_imu_x.plot(data_range_x, accel_x_values, 'r', label="Accel X")
@@ -189,7 +219,7 @@ def update_graphs():
 
         ax_imu_y.clear()
         ax_imu_y.set_xticklabels([])
-        ax_imu_y.set_ylabel("Accel Y")
+        ax_imu_y.set_ylabel("Accel Y", color='white')
         ax_imu_y.tick_params(axis='both', labelsize=8)
         
         # Ensure proper range for x-axis
@@ -197,7 +227,7 @@ def update_graphs():
         accel_y_values = imu_df["Accel_Y"].iloc[max(0, imu_index-100):imu_index]
         
         # Plot Mean Line
-        ax_imu_y.axhline(y=accel_y_values.mean(), color='r', linestyle='--', label='Mean Y')
+        ax_imu_y.axhline(y=accel_y_values.mean(), color='orange', linestyle='--', label='Mean Y')
         
         # Plot Signal
         ax_imu_y.plot(data_range_y, accel_y_values, 'g', label="Accel Y")
@@ -209,8 +239,8 @@ def update_graphs():
         ax_imu_y.legend(loc="upper right", fontsize="6")
 
         ax_imu_z.clear()
-        ax_imu_z.set_xlabel("Index")
-        ax_imu_z.set_ylabel("Accel")
+        ax_imu_z.set_xlabel("Index", color='white')
+        ax_imu_z.set_ylabel("Accel Z", color='white')
         ax_imu_z.tick_params(axis='both', labelsize=8)
         
         # Ensure proper range for x-axis
@@ -218,7 +248,7 @@ def update_graphs():
         accel_z_values = imu_df["Accel_Z"].iloc[max(0, imu_index-100):imu_index]
         
         # Plot Mean Line
-        ax_imu_z.axhline(y=accel_z_values.mean(), color='r', linestyle='--', label='Mean Z')
+        ax_imu_z.axhline(y=accel_z_values.mean(), color='orange', linestyle='--', label='Mean Z')
         
         # Plot Signal
         ax_imu_z.plot(data_range_z, accel_z_values, 'b', label="Accel Z")

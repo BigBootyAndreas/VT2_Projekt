@@ -19,7 +19,7 @@ from data_preparation import prepare_data_for_ml, scale_features
 
 class ToolWearPredictor:
     """
-    Tool wear prediction system that integrates with your existing processing code
+    Tool wear prediction system that integrates the rest
     """
     def __init__(self, model_path=None, scaler_path=None, features_path=None):
         """

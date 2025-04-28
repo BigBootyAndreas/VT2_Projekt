@@ -9,7 +9,7 @@ from sklearn.svm import SVR
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import (
     GridSearchCV, RandomizedSearchCV,
-    cross_validate, KFold
+    cross_validate, TimeSeriesSplit
 )
 from sklearn.metrics import (
     make_scorer, mean_squared_error,
@@ -39,9 +39,9 @@ gb_param_grid = {
     "gb__max_depth": [3, 5, 7],
 }
 
-# 2) Setup nested CV
-outer_cv = KFold(n_splits=5, shuffle=True, random_state=42)
-inner_cv = KFold(n_splits=3, shuffle=True, random_state=42)
+# 2) Setup nested CV (time series split)
+outer_cv = TimeSeriesSplit(n_splits=5)   # 5 folds: train on 1/6→test next 1/6, then 2/6→3/6, etc.
+inner_cv = TimeSeriesSplit(n_splits=3)   # 3 folds for hyperparameter tuning
 
 # scoring dict for multiple metrics
 scoring = {

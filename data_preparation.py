@@ -82,90 +82,25 @@ def extract_features_from_stft(stft_result, sr):
     return features
 
 
-def extract_features_from_stft_imu(stft_result, sr=100):
+def extract_features_from_imu(x_accel, y_accel, z_accel, sr=100):
     """
-    Extract features from IMU STFT result
-    Similar to extract_features_from_stft but optimized for IMU data
-    
-    Parameters:
-    -----------
-    stft_result : numpy.ndarray
-        STFT result from IMU data processing
-    sr : int
-        Sampling rate (default: 100 Hz for typical IMU sensors)
-        
-    Returns:
-    --------
-    features : dict
-        Dictionary of extracted features
-    """
-    # Convert to magnitude
-    magnitude = np.abs(stft_result)
-    
-    # Calculate frequency bins
-    n_fft = 2 * (magnitude.shape[0] - 1)
-    freq_bins = np.fft.rfftfreq(n_fft, 1/sr)
-    
-    # Extract features
-    features = {}
-    
-    # Mean magnitude across time for each frequency
-    mean_spectrum = np.mean(magnitude, axis=1)
-    
-    # Energy in different frequency bands relative to Nyquist frequency
-    nyquist = sr / 2
-    low_idx = np.where(freq_bins <= 0.2 * nyquist)[0]  # 0-20% of Nyquist
-    mid_idx = np.where((freq_bins > 0.2 * nyquist) & (freq_bins <= 0.5 * nyquist))[0]  # 20-50% of Nyquist
-    high_idx = np.where(freq_bins > 0.5 * nyquist)[0]  # 50-100% of Nyquist
-    
-    features['energy_low'] = np.sum(mean_spectrum[low_idx]) if len(low_idx) > 0 else 0
-    features['energy_mid'] = np.sum(mean_spectrum[mid_idx]) if len(mid_idx) > 0 else 0
-    features['energy_high'] = np.sum(mean_spectrum[high_idx]) if len(high_idx) > 0 else 0
-    
-    # Total energy
-    features['energy_total'] = np.sum(mean_spectrum)
-    
-    # Spectral centroid (weighted mean of frequencies)
-    if len(freq_bins) == len(mean_spectrum):
-        features['spectral_centroid'] = np.sum(freq_bins * mean_spectrum) / np.sum(mean_spectrum) if np.sum(mean_spectrum) > 0 else 0
-    
-    # Spectral spread (weighted std of frequencies)
-    if len(freq_bins) == len(mean_spectrum) and features['spectral_centroid'] > 0:
-        features['spectral_spread'] = np.sqrt(np.sum(((freq_bins - features['spectral_centroid'])**2) * mean_spectrum) / np.sum(mean_spectrum)) if np.sum(mean_spectrum) > 0 else 0
-    
-    # Spectral flatness (ratio of geometric mean to arithmetic mean)
-    epsilon = 1e-10  # Small value to avoid log(0)
-    features['spectral_flatness'] = np.exp(np.mean(np.log(mean_spectrum + epsilon))) / (np.mean(mean_spectrum) + epsilon)
-    
-    # Spectral roll-off (frequency below which 85% of energy is contained)
-    cumsum = np.cumsum(mean_spectrum)
-    threshold = 0.85 * cumsum[-1] if len(cumsum) > 0 and cumsum[-1] > 0 else 0
-    rolloff_idx = np.where(cumsum >= threshold)[0][0] if len(np.where(cumsum >= threshold)[0]) > 0 else 0
-    features['spectral_rolloff'] = freq_bins[rolloff_idx] if rolloff_idx < len(freq_bins) else 0
-    
-    # Peak frequency
-    peak_idx = np.argmax(mean_spectrum) if len(mean_spectrum) > 0 else 0
-    features['peak_freq'] = freq_bins[peak_idx] if peak_idx < len(freq_bins) else 0
-    
-    return features
-
-def extract_features_from_imu(x_accel, y_accel, z_accel):
-    """
-    Extract features from IMU data
+    Extract both time-domain and STFT-based features from IMU data (X, Y, Z axes).
     
     Parameters:
     -----------
     x_accel, y_accel, z_accel : numpy.ndarray
-        Acceleration values for each axis
-        
+        Acceleration values for each axis (X, Y, Z).
+    sr : int, optional
+        Sampling rate (default is 100 Hz).
+    
     Returns:
     --------
     features : dict
-        Dictionary of extracted features
+        Dictionary of extracted features (both time-domain and STFT-based).
     """
     features = {}
     
-    # Time domain features for each axis
+    # Time-domain features for each axis (X, Y, Z)
     for axis_name, axis_data in zip(['x', 'y', 'z'], [x_accel, y_accel, z_accel]):
         features[f'{axis_name}_mean'] = np.mean(axis_data)
         features[f'{axis_name}_std'] = np.std(axis_data)
@@ -174,32 +109,72 @@ def extract_features_from_imu(x_accel, y_accel, z_accel):
         features[f'{axis_name}_kurtosis'] = stats.kurtosis(axis_data)
         features[f'{axis_name}_skewness'] = stats.skew(axis_data)
         
-        # Frequency domain features
+        # FFT frequency-domain features
         fft_result = np.abs(np.fft.rfft(axis_data))
         features[f'{axis_name}_energy'] = np.sum(fft_result**2)
         
         if len(fft_result) > 0:
-            # Peak frequency
             features[f'{axis_name}_peak_freq'] = np.argmax(fft_result)
-            
-            # Frequency band energy
             freq_bins = np.fft.rfftfreq(len(axis_data))
             low_idx = np.where(freq_bins <= 0.1)[0]  # Low frequency (0-10% of Nyquist)
             mid_idx = np.where((freq_bins > 0.1) & (freq_bins <= 0.4))[0]  # Mid frequency
             high_idx = np.where(freq_bins > 0.4)[0]  # High frequency
-            
             features[f'{axis_name}_energy_low'] = np.sum(fft_result[low_idx]**2) if len(low_idx) > 0 else 0
             features[f'{axis_name}_energy_mid'] = np.sum(fft_result[mid_idx]**2) if len(mid_idx) > 0 else 0
             features[f'{axis_name}_energy_high'] = np.sum(fft_result[high_idx]**2) if len(high_idx) > 0 else 0
     
-    # Combined magnitude features
-    magnitude = np.sqrt(x_accel**2 + y_accel**2 + z_accel**2)
-    features['magnitude_mean'] = np.mean(magnitude)
-    features['magnitude_std'] = np.std(magnitude)
-    features['magnitude_rms'] = np.sqrt(np.mean(np.square(magnitude)))
-    features['magnitude_peak'] = np.max(magnitude)
-    
+    # STFT frequency-domain features for each axis (X, Y, Z)
+    for axis_name, axis_data in zip(['x', 'y', 'z'], [x_accel, y_accel, z_accel]):
+        # Calculate STFT
+        stft_result = librosa.stft(axis_data, n_fft=8192, hop_length=2048, win_length=8192)
+        magnitude = np.abs(stft_result)
+        mean_spectrum = np.mean(magnitude, axis=1)
+        
+        # Calculate frequency bins
+        n_fft = 2 * (magnitude.shape[0] - 1)
+        freq_bins = np.fft.rfftfreq(n_fft, 1/sr)
+        
+        # Energy in frequency bands relative to Nyquist
+        nyquist = sr / 2
+        low_idx = np.where(freq_bins <= 0.2 * nyquist)[0] if len(freq_bins) > 0 else []
+        mid_idx = np.where((freq_bins > 0.2 * nyquist) & (freq_bins <= 0.5 * nyquist))[0] if len(freq_bins) > 0 else []
+        high_idx = np.where(freq_bins > 0.5 * nyquist)[0] if len(freq_bins) > 0 else []
+        
+        # Extract and add features with axis prefix
+        features[f'{axis_name}_stft_energy_low'] = np.sum(mean_spectrum[low_idx]) if len(low_idx) > 0 else 0
+        features[f'{axis_name}_stft_energy_mid'] = np.sum(mean_spectrum[mid_idx]) if len(mid_idx) > 0 else 0
+        features[f'{axis_name}_stft_energy_high'] = np.sum(mean_spectrum[high_idx]) if len(high_idx) > 0 else 0
+        features[f'{axis_name}_stft_energy_total'] = np.sum(mean_spectrum)
+        
+        # Spectral centroid
+        if len(freq_bins) == len(mean_spectrum) and np.sum(mean_spectrum) > 0:
+            features[f'{axis_name}_stft_spectral_centroid'] = np.sum(freq_bins * mean_spectrum) / np.sum(mean_spectrum)
+        else:
+            features[f'{axis_name}_stft_spectral_centroid'] = 0
+            
+        # Spectral spread (only calculate if centroid exists)
+        if features[f'{axis_name}_stft_spectral_centroid'] > 0 and np.sum(mean_spectrum) > 0:
+            features[f'{axis_name}_stft_spectral_spread'] = np.sqrt(
+                np.sum(((freq_bins - features[f'{axis_name}_stft_spectral_centroid'])**2) * mean_spectrum) / np.sum(mean_spectrum)
+            )
+        else:
+            features[f'{axis_name}_stft_spectral_spread'] = 0
+            
+        # Spectral flatness
+        epsilon = 1e-10  # To avoid log(0) or division by zero
+        features[f'{axis_name}_stft_spectral_flatness'] = np.exp(np.mean(np.log(mean_spectrum + epsilon))) / (np.mean(mean_spectrum) + epsilon)
+        
+        # Spectral roll-off
+        if len(mean_spectrum) > 0 and np.sum(mean_spectrum) > 0:
+            cumsum = np.cumsum(mean_spectrum)
+            threshold = 0.85 * cumsum[-1]
+            rolloff_idx = np.where(cumsum >= threshold)[0][0] if len(np.where(cumsum >= threshold)[0]) > 0 else 0
+            features[f'{axis_name}_stft_spectral_rolloff'] = freq_bins[rolloff_idx] if rolloff_idx < len(freq_bins) else 0
+        else:
+            features[f'{axis_name}_stft_spectral_rolloff'] = 0
+            
     return features
+
 
 def prepare_data_for_ml(acoustic_file, imu_file, tool_lifetime):
     """
@@ -248,182 +223,18 @@ def prepare_data_for_ml(acoustic_file, imu_file, tool_lifetime):
     
     # Extract IMU features if the required columns exist
     imu_features = {}
-    imu_stft_features = {}  # New: for storing STFT-based IMU features
-    try:
         # Check if we have the expected columns from the IMU data
-        if "X (g)" in imu_df.columns and "Y (g)" in imu_df.columns and "Z (g)" in imu_df.columns:
+    if "X (g)" in imu_df.columns and "Y (g)" in imu_df.columns and "Z (g)" in imu_df.columns:
             print("Using X (g), Y (g), Z (g) columns for IMU data processing")
             x_accel = imu_df["X (g)"].values
             y_accel = imu_df["Y (g)"].values
             z_accel = imu_df["Z (g)"].values
             imu_features = extract_features_from_imu(x_accel, y_accel, z_accel)
-            
-            # Add STFT-based feature extraction for IMU data
-            print("Calculating STFT features for IMU data...")
-            
-            # Process each axis with STFT and extract features
-            imu_stft_features_x = {}
-            imu_stft_features_y = {}
-            imu_stft_features_z = {}
-            
-            # Use the same parameters as in IMU_data.py
-            n_fft = 8192
-            hop_length = 2048
-            win_length = 8192
-            
-            # Compute STFT for each axis
-            stft_x = librosa.stft(x_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            stft_y = librosa.stft(y_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            stft_z = librosa.stft(z_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            
-            # Estimate sampling rate if needed
-            if not 'sr' in locals() or sr is None:
-                # This is an approximation - you might want to adjust based on the data
-                sr = 100  # Typical IMU sampling rate
-            
-            # Extract features from STFT results
-            x_features = extract_features_from_stft_imu(stft_x, sr)
-            y_features = extract_features_from_stft_imu(stft_y, sr)
-            z_features = extract_features_from_stft_imu(stft_z, sr)
-            
-            # Prefix the features with axis name
-            imu_stft_features_x = {'x_' + k: v for k, v in x_features.items()}
-            imu_stft_features_y = {'y_' + k: v for k, v in y_features.items()}
-            imu_stft_features_z = {'z_' + k: v for k, v in z_features.items()}
-            
-            # Combine all IMU STFT features
-            imu_stft_features = {**imu_stft_features_x, **imu_stft_features_y, **imu_stft_features_z}
-            
-        # Fallback to traditional column names if they exist
-        elif "Accel_X" in imu_df.columns and "Accel_Y" in imu_df.columns and "Accel_Z" in imu_df.columns:
-            print("Using Accel_X, Accel_Y, Accel_Z columns for IMU data processing")
-            x_accel = imu_df["Accel_X"].values
-            y_accel = imu_df["Accel_Y"].values
-            z_accel = imu_df["Accel_Z"].values
-            imu_features = extract_features_from_imu(x_accel, y_accel, z_accel)
-            
-            # Add STFT-based feature extraction for IMU data
-            print("Calculating STFT features for IMU data...")
-            
-            # Process each axis with STFT and extract features
-            imu_stft_features_x = {}
-            imu_stft_features_y = {}
-            imu_stft_features_z = {}
-            
-            # Use the same parameters as in IMU_data.py
-            n_fft = 8192
-            hop_length = 2048
-            win_length = 8192
-            
-            # Compute STFT for each axis
-            stft_x = librosa.stft(x_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            stft_y = librosa.stft(y_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            stft_z = librosa.stft(z_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            
-            # Estimate sampling rate if needed
-            if not 'sr' in locals() or sr is None:
-                # This is an approximation - you might want to adjust based on the data
-                sr = 100  # Typical IMU sampling rate
-            
-            # Extract features from STFT results
-            x_features = extract_features_from_stft_imu(stft_x, sr)
-            y_features = extract_features_from_stft_imu(stft_y, sr)
-            z_features = extract_features_from_stft_imu(stft_z, sr)
-            
-            # Prefix the features with axis name
-            imu_stft_features_x = {'x_' + k: v for k, v in x_features.items()}
-            imu_stft_features_y = {'y_' + k: v for k, v in y_features.items()}
-            imu_stft_features_z = {'z_' + k: v for k, v in z_features.items()}
-            
-            # Combine all IMU STFT features
-            imu_stft_features = {**imu_stft_features_x, **imu_stft_features_y, **imu_stft_features_z}
-            
-        else:
-            print("Warning: IMU file doesn't have expected acceleration columns.")
-            print("Available columns:", imu_df.columns.tolist())
-            
-            # Create synthetic IMU features based on acoustic data
-            print("Creating synthetic IMU features for demonstration.")
-            # Use the amplitude as a basis for synthetic acceleration
-            amplitude = acoustic_df["Amplitude"].values
-            x_accel = amplitude * 0.5 + np.random.normal(0, 0.1, len(amplitude))
-            y_accel = amplitude * 0.3 + np.random.normal(0, 0.1, len(amplitude))
-            z_accel = amplitude * 0.7 + np.random.normal(0, 0.1, len(amplitude))
-            imu_features = extract_features_from_imu(x_accel, y_accel, z_accel)
-            
-            # Add STFT-based feature extraction for IMU data
-            print("Calculating STFT features for IMU data...")
-            
-            # Process each axis with STFT and extract features
-            imu_stft_features_x = {}
-            imu_stft_features_y = {}
-            imu_stft_features_z = {}
-            
-            # Use the same parameters as in IMU_data.py
-            n_fft = 8192
-            hop_length = 2048
-            win_length = 8192
-            
-            # Compute STFT for each axis
-            stft_x = librosa.stft(x_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            stft_y = librosa.stft(y_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            stft_z = librosa.stft(z_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-            
-            # Estimate sampling rate if needed
-            if not 'sr' in locals() or sr is None:
-                # This is an approximation - you might want to adjust based on the data
-                sr = 100  # Typical IMU sampling rate
-            
-            # Extract features from STFT results
-            x_features = extract_features_from_stft_imu(stft_x, sr)
-            y_features = extract_features_from_stft_imu(stft_y, sr)
-            z_features = extract_features_from_stft_imu(stft_z, sr)
-            
-            # Prefix the features with axis name
-            imu_stft_features_x = {'x_' + k: v for k, v in x_features.items()}
-            imu_stft_features_y = {'y_' + k: v for k, v in y_features.items()}
-            imu_stft_features_z = {'z_' + k: v for k, v in z_features.items()}
-            
-            # Combine all IMU STFT features
-            imu_stft_features = {**imu_stft_features_x, **imu_stft_features_y, **imu_stft_features_z}
-            
-    except Exception as e:
-        print(f"Error extracting IMU features: {e}")
-        # Create synthetic IMU features for demonstration
-        print("Creating synthetic IMU features after error.")
-        # Generate random acceleration values
-        n_samples = 1000
-        x_accel = np.random.normal(0, 1, n_samples)
-        y_accel = np.random.normal(0, 1, n_samples)
-        z_accel = np.random.normal(0, 1, n_samples)
-        imu_features = extract_features_from_imu(x_accel, y_accel, z_accel)
-        
-        # Add STFT-based feature extraction for synthetic IMU data
-        print("Calculating STFT features for synthetic IMU data...")
-        n_fft = 8192
-        hop_length = 2048
-        win_length = 8192
-        
-        # Compute STFT for each axis
-        stft_x = librosa.stft(x_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-        stft_y = librosa.stft(y_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-        stft_z = librosa.stft(z_accel, n_fft=n_fft, hop_length=hop_length, win_length=win_length)
-        
-        # Extract features from STFT results
-        x_features = extract_features_from_stft_imu(stft_x, 100)  # Assuming 100Hz for synthetic data
-        y_features = extract_features_from_stft_imu(stft_y, 100)
-        z_features = extract_features_from_stft_imu(stft_z, 100)
-        
-        # Prefix the features with axis name
-        imu_stft_features_x = {'x_' + k: v for k, v in x_features.items()}
-        imu_stft_features_y = {'y_' + k: v for k, v in y_features.items()}
-        imu_stft_features_z = {'z_' + k: v for k, v in z_features.items()}
-        
-        # Combine all IMU STFT features
-        imu_stft_features = {**imu_stft_features_x, **imu_stft_features_y, **imu_stft_features_z}
+    else:
+        print("IMU data does not contain expected columns.")
     
-    # Combine features: now including the STFT-based IMU features
-    all_features = {**acoustic_features, **imu_features, **imu_stft_features}
+    # Combine features
+    all_features = {**acoustic_features, **imu_features}
     
     # Convert to dataframe with one row
     features_df = pd.DataFrame([all_features])
@@ -436,6 +247,7 @@ def prepare_data_for_ml(acoustic_file, imu_file, tool_lifetime):
     y = pd.Series([wear_state])
     
     return X, y, all_features
+
 
 def scale_features(X, scaler=None):
     """
@@ -465,6 +277,7 @@ def scale_features(X, scaler=None):
     X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns)
     
     return X_scaled_df, scaler
+
 
 def collect_dataset_from_directory(data_dir, tool_lifetime):
     """
@@ -574,6 +387,7 @@ def collect_dataset_from_directory(data_dir, tool_lifetime):
     print(f"Created dataset with {X.shape[0]} samples and {X.shape[1]} features")
     
     return X, y
+
 
 if __name__ == "__main__":
     # Example usage

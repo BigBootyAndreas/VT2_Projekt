@@ -18,7 +18,7 @@ def imu_processing(df, plot_type="psd"):
     time = time - time[0]
 
     # Sampling rate
-    sr = 100
+    sr = 400
 
     if plot_type == "raw":
         # Create subplots

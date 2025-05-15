@@ -21,48 +21,35 @@ def imu_processing(df, plot_type="psd"):
     sr = 100
 
     if plot_type == "raw":
-        # Determine the global y-axis range across all axes
-        y_min = min(x_accel.min(), y_accel.min(), z_accel.min())
-        y_max = max(x_accel.max(), y_accel.max(), z_accel.max())
-        y_range = y_max - y_min
-
-        # Adjust the range to add a 10% margin
-        y_min_adjusted = round(y_min - 0.1 * y_range, 2)
-        y_max_adjusted = round(y_max + 0.1 * y_range, 2)
+        # Create subplots
+        fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
 
         # Plot X-axis data
-        plt.figure(figsize=(10, 4))
-        plt.plot(time, x_accel, label="X-axis", color="r")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Acceleration (g)")
-        plt.title("Raw IMU Data - X-axis")
-        plt.ylim(y_min_adjusted, y_max_adjusted)
-        plt.grid(True)
-        plt.show()
+        axs[0].plot(time, x_accel, label="X-axis", color="r")
+        axs[0].set_ylabel("Acceleration (g)")
+        axs[0].set_title("Raw IMU Data - X-axis")
+        axs[0].grid(True)
 
         # Plot Y-axis data
-        plt.figure(figsize=(10, 4))
-        plt.plot(time, y_accel, label="Y-axis", color="g")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Acceleration (g)")
-        plt.title("Raw IMU Data - Y-axis")
-        plt.ylim(y_min_adjusted, y_max_adjusted)
-        plt.grid(True)
-        plt.show()
+        axs[1].plot(time, y_accel, label="Y-axis", color="g")
+        axs[1].set_ylabel("Acceleration (g)")
+        axs[1].set_title("Raw IMU Data - Y-axis")
+        axs[1].grid(True)
 
         # Plot Z-axis data
-        plt.figure(figsize=(10, 4))
-        plt.plot(time, z_accel, label="Z-axis", color="b")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Acceleration (g)")
-        plt.title("Raw IMU Data - Z-axis")
-        plt.ylim(y_min_adjusted, y_max_adjusted)
-        plt.grid(True)
+        axs[2].plot(time, z_accel, label="Z-axis", color="b")
+        axs[2].set_xlabel("Time (s)")
+        axs[2].set_ylabel("Acceleration (g)")
+        axs[2].set_title("Raw IMU Data - Z-axis")
+        axs[2].grid(True)
+
+        # Adjust layout
+        plt.tight_layout()
         plt.show()
 
     elif plot_type == "psd":
         # Plot PSD function
-        def plot_psd(accel, sr, axis_name):
+        def plot_psd(accel, sr, axis_name, ax):
             n_fft = 8192
             hop_length = 2048
             win_length = 8192
@@ -75,19 +62,23 @@ def imu_processing(df, plot_type="psd"):
             freq_resolution = sr / len(freq_bins)
             psd = power / freq_resolution
 
-            plt.figure(figsize=(10, 4))
-            plt.plot(freq_bins, psd, label=f'{axis_name}-axis', linewidth=2)
-            plt.xlabel('Frequency (Hz)')
-            plt.ylabel('Power Spectral Density (G²/Hz)')
-            plt.title(f'PSD for {axis_name} Acceleration')
-            plt.xscale('log')
-            plt.yscale('log')
-            plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-            plt.legend()
-            plt.xlim(left=1)
-            plt.show()
+            ax.plot(freq_bins, psd, label=f'{axis_name}-axis', linewidth=2)
+            ax.set_xlabel('Frequency (Hz)')
+            ax.set_ylabel('Power Spectral Density (G²/Hz)')
+            ax.set_title(f'PSD for {axis_name} Acceleration')
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+            ax.legend()
 
-        # Plot PSD for each axis
-        plot_psd(x_accel, sr, 'X')
-        plot_psd(y_accel, sr, 'Y')
-        plot_psd(z_accel, sr, 'Z')
+            # Limit frequency range to above 10 Hz
+            ax.set_xlim(left=1)
+
+        # Plotting
+        fig, axs = plt.subplots(3, 1, figsize=(10, 15))
+        plot_psd(x_accel, sr, 'X', axs[0])
+        plot_psd(y_accel, sr, 'Y', axs[1])
+        plot_psd(z_accel, sr, 'Z', axs[2])
+
+        plt.subplots_adjust(hspace=0.345)
+        plt.show()

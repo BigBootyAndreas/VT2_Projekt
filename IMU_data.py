@@ -8,7 +8,7 @@ def imu_processing(df, plot_type="psd"):
     print("Detected columns:", df.columns)
 
     # Use actual column names from the CSV
-    id= df["id"].astype(int).values
+    id = df["id"].astype(int).values
     x_accel = df["X (g)"].astype(float).values
     y_accel = df["Y (g)"].astype(float).values
     z_accel = df["Z (g)"].astype(float).values
@@ -18,27 +18,32 @@ def imu_processing(df, plot_type="psd"):
     time = time - time[0]
 
     # Sampling rate
-    sr = 100
+    sr = 400
 
     if plot_type == "raw":
-        # Plot raw data as subplots
+        # Create subplots
         fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-        axs[0].plot(id, x_accel, label="X-axis", color="r")
+
+        # Plot X-axis data
+        axs[0].plot(time, x_accel, label="X-axis", color="r")
         axs[0].set_ylabel("Acceleration (g)")
         axs[0].set_title("Raw IMU Data - X-axis")
         axs[0].grid(True)
 
-        axs[1].plot(id, y_accel, label="Y-axis", color="g")
+        # Plot Y-axis data
+        axs[1].plot(time, y_accel, label="Y-axis", color="g")
         axs[1].set_ylabel("Acceleration (g)")
         axs[1].set_title("Raw IMU Data - Y-axis")
         axs[1].grid(True)
 
-        axs[2].plot(id, z_accel, label="Z-axis", color="b")
+        # Plot Z-axis data
+        axs[2].plot(time, z_accel, label="Z-axis", color="b")
         axs[2].set_xlabel("Time (s)")
         axs[2].set_ylabel("Acceleration (g)")
         axs[2].set_title("Raw IMU Data - Z-axis")
         axs[2].grid(True)
 
+        # Adjust layout
         plt.tight_layout()
         plt.show()
 

@@ -35,7 +35,18 @@ def main():
                 base_path, folder_name = folder_list[choice]
                 selected_folder = os.path.join(base_path, folder_name)
                 print(f"Selected folder: {selected_folder}")
-                break
+                break                # Determine folder type (IMU, Acoustic, or Drill) based on name
+                folder_name_check = os.path.basename(selected_folder)
+                
+                if 'IMU' in folder_name_check:
+                    folder_choice = '1'  # IMU data
+                elif 'Acoustic' in folder_name_check:
+                    folder_choice = '2'  # Acoustic data
+                elif 'Drill' in folder_name_check:
+                    folder_choice = '3'  # Drill data
+                else:
+                    print("Unknown folder type. Exiting.")
+                    return
             else:
                 print("Invalid selection. Please choose a valid folder number.")
         except ValueError:

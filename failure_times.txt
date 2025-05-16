@@ -1,0 +1,8 @@
+Failure Times Analysis Results
+==============================
+Sample 2: 26.0s
+Sample 3: 25.0s
+Sample 5: 15.0s
+Sample 6: 0.0s
+Sample 9: 45.0s
+Sample 10: 0.0s

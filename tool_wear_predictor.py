@@ -273,6 +273,190 @@ class ToolWearPredictor:
             return f"{seconds}s"
 
 
+def evaluate_progressive_model(model_dir="models/drill_progressive", data_dir=None):
+    """
+    Evaluate progressive wear model on held-out test data (samples 18-23)
+    """
+    print("=== Evaluating Progressive Drill Model ===")
+    
+    # Import needed functions
+    from progressive_wear_dataset import collect_test_dataset
+    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+    
+    if not os.path.exists(model_dir):
+        print(f"Model directory not found: {model_dir}")
+        print("Train the model first using train_drill_model.py")
+        return None
+    
+    if data_dir is None:
+        data_dir = "C:\\Users\\User\\Documents\\AAU 8. semester\\Projekt\\Data"
+    
+    # Load test failure map
+    test_failure_map_path = os.path.join(model_dir, "test_failure_map.pkl")
+    if not os.path.exists(test_failure_map_path):
+        print("Test failure map not found. Train the model first.")
+        return None
+    
+    # Number of windows
+    n_windows = int(input("Enter number of windows used in training (default 4): ") or "4")
+    
+    # Collect test data (automatically filters for samples 18-23)
+    print("\nCollecting test data...")
+    X_test, y_test, info_test = collect_test_dataset(data_dir, n_windows)
+    
+    print(f"Test dataset: {len(X_test)} windows from samples 18-23")
+    
+    # Find trained models
+    model_files = [f for f in os.listdir(model_dir) if f.endswith('_model.pkl')]
+    
+    if not model_files:
+        print("No trained models found")
+        return None
+    
+    print("\nAvailable models:")
+    for i, model_file in enumerate(model_files):
+        print(f"{i+1}. {model_file}")
+    
+    # Evaluate each model
+    results = {}
+    
+    for model_file in model_files:
+        base_name = model_file.replace('_model.pkl', '')
+        print(f"\nEvaluating {base_name}...")
+        
+        # Create a temporary predictor for this model
+        model_path = os.path.join(model_dir, f"{base_name}_model.pkl")
+        scaler_path = os.path.join(model_dir, f"{base_name}_scaler.pkl")
+        features_path = os.path.join(model_dir, f"{base_name}_features.pkl")
+        
+        temp_predictor = ToolWearPredictor(model_path, scaler_path, features_path)
+        
+        if not temp_predictor.model_loaded:
+            print(f"  Error loading {base_name}")
+            continue
+        
+        # Handle missing features
+        X_test_model = X_test.copy()
+        missing_features = [f for f in temp_predictor.feature_cols if f not in X_test_model.columns]
+        for feature in missing_features:
+            X_test_model[feature] = 0
+            print(f"  Warning: Missing feature {feature}, filled with 0")
+        
+        # Scale and predict
+        X_test_scaled = temp_predictor.scaler.transform(X_test_model[temp_predictor.feature_cols])
+        y_pred = temp_predictor.model.predict(X_test_scaled)
+        
+        # Calculate metrics
+        mse = mean_squared_error(y_test, y_pred)
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        
+        results[base_name] = {
+            'predictions': y_pred,
+            'MSE': mse,
+            'MAE': mae,
+            'R2': r2,
+            'RMSE': np.sqrt(mse)
+        }
+        
+        print(f"  MSE: {mse:.4f}")
+        print(f"  MAE: {mae:.4f}")
+        print(f"  R²: {r2:.4f}")
+    
+    if not results:
+        print("No models could be evaluated")
+        return None
+    
+    # Display comparison
+    print(f"\n{'='*70}")
+    print("EVALUATION RESULTS ON TEST DATA (Samples 18-23)")
+    print(f"{'='*70}")
+    print(f"{'Model':<35} {'MSE':<10} {'MAE':<10} {'R²':<10} {'RMSE':<10}")
+    print(f"{'-'*70}")
+    
+    best_model = None
+    best_r2 = -float('inf')
+    
+    for model_name, metrics in results.items():
+        print(f"{model_name:<35} {metrics['MSE']:<10.4f} {metrics['MAE']:<10.4f} {metrics['R2']:<10.4f} {metrics['RMSE']:<10.4f}")
+        if metrics['R2'] > best_r2:
+            best_r2 = metrics['R2']
+            best_model = model_name
+    
+    print(f"\nBest model: {best_model} (R² = {best_r2:.4f})")
+    
+    # Plot results for best model
+    if best_model:
+        print(f"\nCreating evaluation plots for {best_model}...")
+        y_pred_best = results[best_model]['predictions']
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        fig.suptitle(f'Evaluation Results: {best_model}', fontsize=16)
+        
+        # 1. Actual vs Predicted
+        axes[0, 0].scatter(y_test, y_pred_best, alpha=0.7)
+        axes[0, 0].plot([0, 1], [0, 1], 'r--', lw=2)
+        axes[0, 0].set_xlabel('Actual Wear')
+        axes[0, 0].set_ylabel('Predicted Wear')
+        axes[0, 0].set_title('Actual vs Predicted Wear')
+        axes[0, 0].grid(True)
+        
+        # 2. Residuals
+        residuals = y_test - y_pred_best
+        axes[0, 1].scatter(y_pred_best, residuals, alpha=0.7)
+        axes[0, 1].axhline(y=0, color='r', linestyle='--')
+        axes[0, 1].set_xlabel('Predicted Wear')
+        axes[0, 1].set_ylabel('Residuals')
+        axes[0, 1].set_title('Residuals Plot')
+        axes[0, 1].grid(True)
+        
+        # 3. Wear progression by sample
+        sample_numbers = info_test['sample_number'].values
+        unique_samples = sorted(info_test['sample_number'].unique())
+        
+        axes[1, 0].set_title('Wear Progression by Sample')
+        axes[1, 0].set_xlabel('Window Number')
+        axes[1, 0].set_ylabel('Wear Level')
+        
+        for sample in unique_samples:
+            mask = sample_numbers == sample
+            sample_actual = y_test.values[mask]
+            sample_pred = y_pred_best[mask]
+            windows = range(1, len(sample_actual) + 1)
+            
+            axes[1, 0].plot(windows, sample_actual, 'o-', label=f'Sample {sample} (Actual)', alpha=0.8)
+            axes[1, 0].plot(windows, sample_pred, 's--', label=f'Sample {sample} (Pred)', alpha=0.8)
+        
+        axes[1, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        axes[1, 0].grid(True)
+        
+        # 4. Error distribution
+        axes[1, 1].hist(residuals, bins=15, alpha=0.7, edgecolor='black')
+        axes[1, 1].set_xlabel('Prediction Error')
+        axes[1, 1].set_ylabel('Frequency')
+        axes[1, 1].set_title('Error Distribution')
+        axes[1, 1].grid(True)
+        
+        plt.tight_layout()
+        plt.show()
+        
+        # Save detailed results
+        results_df = pd.DataFrame({
+            'Sample': info_test['sample_number'],
+            'Window': info_test['window_number'],
+            'Actual_Wear': y_test,
+            'Predicted_Wear': y_pred_best,
+            'Error': residuals,
+            'Abs_Error': np.abs(residuals)
+        })
+        
+        results_file = os.path.join(model_dir, 'test_evaluation_results.csv')
+        results_df.to_csv(results_file, index=False)
+        print(f"\nDetailed results saved to: {results_file}")
+    
+    return results
+
+
 def train_model_from_recordings(data_dir, output_dir="models", tool_lifetime=3600):
     """
     Train a new model from a directory of recordings
@@ -316,6 +500,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tool Wear Prediction System")
     parser.add_argument("--analyze", help="Path to directory containing recordings to analyze")
     parser.add_argument("--train", help="Path to directory containing recordings for training")
+    parser.add_argument("--evaluate", action="store_true", help="Evaluate progressive model on test data")
     parser.add_argument("--model", help="Path to trained model file")
     parser.add_argument("--scaler", help="Path to scaler file")
     parser.add_argument("--features", help="Path to feature list file")
@@ -324,7 +509,11 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    if args.train:
+    if args.evaluate:
+        # Evaluate progressive model
+        evaluate_progressive_model()
+        
+    elif args.train:
         # Train new model
         predictor = train_model_from_recordings(args.train, tool_lifetime=args.lifetime)
         
@@ -343,4 +532,24 @@ if __name__ == "__main__":
         predictor.save_results()
         
     else:
-        print("Please specify either --train or --analyze with --model, --scaler, and --features")
+        print("Choose an option:")
+        print("1. Evaluate progressive model")
+        print("2. Train new model")
+        print("3. Analyze recordings with existing model")
+        
+        choice = input("Enter choice: ")
+        if choice == "1":
+            evaluate_progressive_model()
+        elif choice == "2":
+            data_dir = "C:\\Users\\User\\Documents\\AAU 8. semester\\Projekt\\Data"
+            predictor = train_model_from_recordings(data_dir)
+        elif choice == "3":
+            model_path = input("Enter path to model file: ")
+            scaler_path = input("Enter path to scaler file: ")
+            features_path = input("Enter path to features file: ")
+            data_dir = "C:\\Users\\User\\Documents\\AAU 8. semester\\Projekt\\Data"
+            
+            predictor = ToolWearPredictor(model_path, scaler_path, features_path)
+            predictor.analyze_directory(data_dir)
+            predictor.plot_wear_history()
+            predictor.save_results()

@@ -1,7 +1,7 @@
 import os
 import sys
 import subprocess
-import pandas as pd  # Add this line
+import pandas as pd  
 import numpy as np
 
 # Import necessary functions
@@ -320,10 +320,10 @@ def main():
         print(f"\n{'='*60}")
         print("WORKFLOW COMPLETE!")
         print(f"{'='*60}")
-        print("✓ Model trained on samples 1-17")
-        print("✓ Model evaluated on samples 18-23")
-        print("✓ Results and plots generated")
-        print("✓ Detailed results saved to CSV")
+        print(" Model trained on samples 1-17")
+        print(" Model evaluated on samples 18-23")
+        print(" Results and plots generated")
+        print(" Detailed results saved to CSV")
         print("\nCheck the 'models/drill_progressive' directory for all output files.")
     else:
         print("Evaluation failed.")

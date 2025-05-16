@@ -1,13 +1,13 @@
 Progressive Model Training Summary
 ========================================
-Training approach: Progressive wear with 20 windows
-Training samples: 1-17 (340 windows)
+Training approach: Progressive wear with 30 windows
+Training samples: 1-17 (510 windows)
 Test samples: 18-23 (held out)
-Total features per window: 50
+Total features per window: 48
 Training samples used: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 Training data distribution:
-  0.0-0.3: 38 windows (11.2%)
-  0.3-0.7: 82 windows (24.1%)
-  0.7-0.9: 99 windows (29.1%)
-  0.9-1.0: 2 windows (0.6%)
+  0.0-0.3: 58 windows (11.4%)
+  0.3-0.7: 119 windows (23.3%)
+  0.7-0.9: 150 windows (29.4%)
+  0.9-1.0: 2 windows (0.4%)

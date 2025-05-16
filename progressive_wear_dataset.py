@@ -198,7 +198,7 @@ def extract_progressive_wear_features(acoustic_df, imu_df, failure_time, base_we
             try:
                 stft_result, sr = acoustic_processing(acoustic_window, show_plot=False)
                 acoustic_features = safe_extract_features_from_stft(stft_result, sr)
-                print(f"      ✓ Extracted {len(acoustic_features)} acoustic features")
+                print(f"       Extracted {len(acoustic_features)} acoustic features")
             except Exception as e:
                 print(f"    Warning: Failed to extract acoustic features for window {i+1}: {e}")
                 acoustic_features = safe_extract_features_from_stft(None, 1000)  # Default features
@@ -228,7 +228,7 @@ def extract_progressive_wear_features(acoustic_df, imu_df, failure_time, base_we
                         # Extract features with additional validation
                         if len(x_accel) > 0 and len(y_accel) > 0 and len(z_accel) > 0:
                             imu_features = safe_extract_features_from_imu(x_accel, y_accel, z_accel)
-                            print(f"        ✓ Extracted {len(imu_features)} IMU features")
+                            print(f"         Extracted {len(imu_features)} IMU features")
                         else:
                             print(f"        Warning: Empty acceleration arrays")
                             imu_features = safe_extract_features_from_imu(np.array([0]), np.array([0]), np.array([0]))
@@ -252,7 +252,7 @@ def extract_progressive_wear_features(acoustic_df, imu_df, failure_time, base_we
                             y_accel = np.nan_to_num(imu_window[alt_cols['y']].values, nan=0.0)
                             z_accel = np.nan_to_num(imu_window[alt_cols['z']].values, nan=0.0)
                             imu_features = safe_extract_features_from_imu(x_accel, y_accel, z_accel)
-                            print(f"        ✓ Extracted {len(imu_features)} IMU features using alternative columns")
+                            print(f"        Extracted {len(imu_features)} IMU features using alternative columns")
                         else:
                             print(f"        Using default IMU features")
                             imu_features = safe_extract_features_from_imu(np.array([0]), np.array([0]), np.array([0]))
@@ -443,9 +443,9 @@ def collect_progressive_wear_dataset(base_dir, failure_map, n_windows=3):
                     
                     # Check for standard column names
                     if "X (g)" in imu_df.columns:
-                        print(f"    ✓ Found standard IMU columns")
+                        print(f"    Found standard IMU columns")
                     else:
-                        print(f"    ⚠ Non-standard IMU columns, will try to detect")
+                        print(f"    Non-standard IMU columns, will try to detect")
                     
                     # Clean IMU data
                     initial_len = len(imu_df)
@@ -472,7 +472,7 @@ def collect_progressive_wear_dataset(base_dir, failure_map, n_windows=3):
         
         # Extract progressive features with error handling
         try:
-            # FIXED: Pass both failure_time and base_wear to the function
+            # Pass both failure_time and base_wear to the function
             window_features, window_wear_levels = extract_progressive_wear_features(
                 acoustic_df, imu_df, failure_time, base_wear, n_windows
             )
@@ -586,9 +586,12 @@ def collect_combined_training_dataset(data_dir, n_windows=4):
     
     return X_train, y_train, info_train
 
-def collect_test_dataset(data_dir, n_windows=4):
+# In progressive_wear_dataset.py, update collect_test_dataset to use the same preprocessing
+
+def collect_test_dataset(data_dir, n_windows=4, use_training_preprocessing=True):
     """
-    Collect test dataset from samples 18-23 (same directory as training)
+    Collect test dataset from samples 18-23 
+    FIXED: Use the same preprocessing pipeline as training
     """
     print("=== Collecting Test Dataset ===")
     
@@ -600,6 +603,53 @@ def collect_test_dataset(data_dir, n_windows=4):
     X_test, y_test, info_test = collect_progressive_wear_dataset(
         data_dir, test_failure_map, n_windows
     )
+    
+    # If using training preprocessing, load the saved preprocessing components
+    if use_training_preprocessing:
+        import os
+        model_dir = "models/drill_progressive"
+        
+        # Try to load training preprocessing components
+        training_scaler_files = [f for f in os.listdir(model_dir) if f.endswith('_scaler.pkl')]
+        training_feature_files = [f for f in os.listdir(model_dir) if f.endswith('_features.pkl')]
+        
+        if training_scaler_files and training_feature_files:
+            import joblib
+            
+            # Use the first found scaler and features (they should be the same for both models)
+            scaler_path = os.path.join(model_dir, training_scaler_files[0])
+            features_path = os.path.join(model_dir, training_feature_files[0])
+            
+            scaler = joblib.load(scaler_path)
+            training_features = joblib.load(features_path)
+            
+            print(f"Loaded training preprocessing:")
+            print(f"  - Scaler: {scaler_path}")
+            print(f"  - Features: {len(training_features)} features")
+            
+            # Ensure test data has the same features as training
+            missing_features = [f for f in training_features if f not in X_test.columns]
+            extra_features = [f for f in X_test.columns if f not in training_features]
+            
+            print(f"  - Missing features in test: {len(missing_features)}")
+            print(f"  - Extra features in test: {len(extra_features)}")
+            
+            # Add missing features with zeros
+            for feature in missing_features:
+                X_test[feature] = 0
+                print(f"    Added missing feature: {feature}")
+            
+            # Remove extra features
+            X_test = X_test[training_features]
+            
+            # Apply the same scaler
+            X_test_scaled = pd.DataFrame(
+                scaler.transform(X_test),
+                columns=training_features,
+                index=X_test.index
+            )
+            
+            return X_test_scaled, y_test, info_test
     
     print(f"\nTest dataset summary:")
     print(f"- Total test samples: {len(X_test)} windows")

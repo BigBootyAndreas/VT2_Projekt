@@ -165,30 +165,6 @@ def _safe_float(value):
         return 0.0
     return float(value)
 
-def _get_default_acoustic_features():
-    """Get default acoustic features when extraction fails"""
-    features = {}
-    bands = ['low', 'mid_low', 'mid', 'mid_high', 'high', 'very_high']
-    
-    for band_name in bands:
-        features[f'energy_{band_name}'] = 0.0
-        features[f'peak_{band_name}'] = 0.0
-        features[f'energy_{band_name}_rel'] = 0.0
-    
-    features.update({
-        'energy_total': 0.0,
-        'spectral_centroid': 0.0,
-        'spectral_spread': 0.0,
-        'spectral_flatness': 0.0,
-        'spectral_rolloff_75': 0.0,
-        'spectral_rolloff_85': 0.0,
-        'spectral_rolloff_95': 0.0,
-        'spectral_flux': 0.0,
-        'spectral_variability': 0.0
-    })
-    
-    return features
-
 def extract_features_from_imu(x_accel, y_accel, z_accel, sr=100):
     """
     Robust IMU feature extraction with comprehensive NaN prevention
@@ -421,8 +397,10 @@ def extract_features_from_imu(x_accel, y_accel, z_accel, sr=100):
         traceback.print_exc()
         return _get_default_imu_features()
 
+# In data_preparation.py, update _get_default_imu_features to include all missing features
+
 def _get_default_imu_features():
-    """Get default IMU features when extraction fails"""
+    """Get default IMU features when extraction fails - ENHANCED VERSION"""
     features = {}
     axes = ['x', 'y', 'z', 'magnitude']
     
@@ -436,7 +414,7 @@ def _get_default_imu_features():
             f'{axis}_shape_factor': 0.0, f'{axis}_crest_factor': 0.0, f'{axis}_zcr': 0.0
         })
         
-        # STFT frequency domain features
+        # STFT frequency domain features (complete set)
         for band in ['very_low', 'low', 'mid', 'high']:
             features[f'{axis}_stft_energy_{band}'] = 0.0
             features[f'{axis}_stft_energy_{band}_rel'] = 0.0
@@ -454,6 +432,36 @@ def _get_default_imu_features():
     # Cross-correlations
     features.update({
         'xy_correlation': 0.0, 'xz_correlation': 0.0, 'yz_correlation': 0.0
+    })
+    
+    # Add missing spectral features for magnitude
+    features.update({
+        'magnitude_spectral_flux': 0.0,
+        'magnitude_spectral_variability': 0.0
+    })
+    
+    return features
+
+def _get_default_acoustic_features():
+    """Get default acoustic features when extraction fails - ENHANCED VERSION"""
+    features = {}
+    bands = ['low', 'mid_low', 'mid', 'mid_high', 'high', 'very_high']
+    
+    for band_name in bands:
+        features[f'energy_{band_name}'] = 0.0
+        features[f'peak_{band_name}'] = 0.0
+        features[f'energy_{band_name}_rel'] = 0.0
+    
+    features.update({
+        'energy_total': 0.0,
+        'spectral_centroid': 0.0,
+        'spectral_spread': 0.0,
+        'spectral_flatness': 0.0,
+        'spectral_rolloff_75': 0.0,
+        'spectral_rolloff_85': 0.0,
+        'spectral_rolloff_95': 0.0,
+        'spectral_flux': 0.0,
+        'spectral_variability': 0.0
     })
     
     return features

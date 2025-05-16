@@ -65,14 +65,15 @@ gb_pipe = Pipeline([
 
 # Enhanced GB parameter grid
 gb_param_grid = {
-    "feature_selection__k": [40, 50],
-    "gb__n_estimators": [100, 300],
-    "gb__learning_rate": [0.05, 0.1],
-    "gb__max_depth": [3, 5, 7],
-    "gb__subsample": [0.8, 1.0],
-    "gb__min_samples_split": [2, 5],
-    "gb__min_samples_leaf": [1, 2],
-    "gb__max_features": ["sqrt", None],
+    "feature_selection__k": [20],  # Same as SVR 
+    "gb__n_estimators": [50, 100],  
+    "gb__learning_rate": [0.01, 0.05, 0.1],  
+    "gb__max_depth": [2, 3],  
+    "gb__subsample": [0.7, 0.8],  
+    "gb__min_samples_split": [10, 15],  
+    "gb__min_samples_leaf": [5, 8],  
+    "gb__max_features": ["sqrt"],  
+    "gb__loss": ["squared_error", "huber"],  
 }
 
 # Setup enhanced cross-validation with group awareness
@@ -260,25 +261,50 @@ def nested_cv_evaluate(X, y, pipe, param_grid, name="Model", search_type="grid",
     
     return summary
 
+# Fix for train_final_model function in ml_models.py
 
 def train_final_model(X, y, pipe, param_grid, name="Model", 
                       search_type="grid", n_iter=20, output_dir="models", info_df=None):  
     """
     Train a final pipeline with enhanced preprocessing and data cleaning
+    FIXED: Handle 'all' value in feature_selection__k parameter
     """
     # Clean data first
     print(f"Cleaning data for {name}...")
     X_clean, y_clean = check_and_clean_data(X, y, verbose=True)
     
-    # Adjust feature selection k based on available features
+    # FIXED: Better feature selection adjustment to handle 'all' value
     if 'feature_selection__k' in param_grid:
         max_features = X_clean.shape[1]
-        adjusted_k_values = [k for k in param_grid['feature_selection__k'] if k <= max_features]
-        if not adjusted_k_values:
-            adjusted_k_values = [min(20, max_features)]
+        original_k_values = param_grid['feature_selection__k']
+        adjusted_k_values = []
+        
+        for k in original_k_values:
+            if k == 'all':
+                # 'all' means use all available features
+                adjusted_k_values.append('all')
+            elif isinstance(k, (int, float)):
+                # For numeric values, ensure they don't exceed max_features
+                if k <= max_features:
+                    adjusted_k_values.append(int(k))
+                else:
+                    # If k is too large, use a reasonable fraction of available features
+                    reasonable_k = min(max_features, max(10, int(max_features * 0.8)))
+                    adjusted_k_values.append(reasonable_k)
+                    print(f"Adjusted feature selection k from {k} to {reasonable_k} (max available: {max_features})")
+            else:
+                # Handle any other unexpected values
+                print(f"Warning: Unexpected value in feature_selection__k: {k}, skipping")
+                continue
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        adjusted_k_values = [k for k in adjusted_k_values if k not in seen and not seen.add(k)]
+        
+        # Update the parameter grid
         param_grid = param_grid.copy()  # Don't modify original
         param_grid['feature_selection__k'] = adjusted_k_values
-        print(f"Adjusted feature selection k values to: {adjusted_k_values}")
+        print(f"Feature selection k values: {adjusted_k_values}")
     
     # Create CV strategy
     inner_cv_strategy, groups = create_cv_strategy(info_df, n_splits=3)
@@ -413,7 +439,6 @@ def train_final_model(X, y, pipe, param_grid, name="Model",
     print(f"Saved metadata to {metadata_path}")
     
     return model_path, scaler_path, features_path
-
 
 def run_ml_pipeline(data_dir, tool_lifetime=3600, output_dir="models"):
     """

@@ -15,7 +15,7 @@ def imu_processing(df, plot_type="psd"):
     time = df["epoch"].astype(float).values
 
     # Convert epoch to relative time
-    time = time - time[0]
+    time = (time - time[0])/1000  # Convert to seconds
 
     # Sampling rate
     sr = 400

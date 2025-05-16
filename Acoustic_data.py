@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from File_reader import *
 
 
-def acoustic_processing(df):
+def acoustic_processing(df, show_plot=False):
     # Extract time and amplitude from the dataframe
     time = df["Time"].values
     amplitude = df["Amplitude"].values
@@ -91,7 +91,12 @@ def acoustic_processing(df):
     
     plt.tight_layout()
     print("Press 'm' to switch to Mel spectrogram or 's' to return to STFT spectrogram")
-    plt.show()
+    if show_plot:
+        plt.tight_layout()
+        print("Press 'm' to switch to Mel spectrogram or 's' to return to STFT spectrogram")
+        plt.show()
+    else:
+        plt.close(fig)  # Close the figure to free memory
     
     return stft_result, sr
 

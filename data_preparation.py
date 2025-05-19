@@ -731,7 +731,6 @@ def collect_dataset_from_directory(data_dir, tool_lifetime, failure_map=None):
     """
     Collect dataset with enhanced preprocessing and actual failure information
     """
-    # [Rest of the function remains the same as before...]
     # Check if we're in a sensor-specific subfolder and need to look for the other sensor data
     folder_name = os.path.basename(data_dir).lower()
     parent_dir = os.path.dirname(data_dir)

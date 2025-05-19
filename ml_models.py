@@ -5,7 +5,7 @@ import os
 import warnings
 
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, RobustScaler, QuantileTransformer
+from sklearn.preprocessing import RobustScaler
 from sklearn.svm import SVR
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import (
@@ -17,7 +17,7 @@ from sklearn.metrics import (
     mean_absolute_error, r2_score
 )
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_regression
-from sklearn.impute import SimpleImputer  # Add imputer for NaN handling
+from sklearn.impute import SimpleImputer  
 
 # Suppress specific warnings
 warnings.filterwarnings('ignore', message='n_quantiles .* is greater than the total number of samples')
@@ -40,7 +40,7 @@ svr_pipe = Pipeline([
     ("imputer", SimpleImputer(strategy='median')),  # Handle NaN values
     ("variance_threshold", VarianceThreshold(threshold=0.01)),
     ("feature_selection", SelectKBest(f_regression, k=30)),
-    ("scaler", RobustScaler()),  # Changed from QuantileTransformer to avoid warnings
+    ("scaler", RobustScaler()),  
     ("svr", SVR())
 ])
 
@@ -59,13 +59,13 @@ gb_pipe = Pipeline([
     ("imputer", SimpleImputer(strategy='median')),  # Handle NaN values
     ("variance_threshold", VarianceThreshold(threshold=0.01)),
     ("feature_selection", SelectKBest(f_regression, k=50)),
-    ("scaler", RobustScaler()),  # RobustScaler is more stable
+    ("scaler", RobustScaler()),  
     ("gb", GradientBoostingRegressor(random_state=42))
 ])
 
 # Enhanced GB parameter grid
 gb_param_grid = {
-    "feature_selection__k": [20],  # Same as SVR 
+    "feature_selection__k": [20],   
     "gb__n_estimators": [50, 100],  
     "gb__learning_rate": [0.01, 0.05, 0.1],  
     "gb__max_depth": [2, 3],  

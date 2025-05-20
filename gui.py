@@ -16,18 +16,18 @@ class Variables:
     def __init__(self):
         
         # contains name of tool in use
-        self.current_tool = "Reamer 20"
+        self.current_tool = "Mitsutomo HSS Metalbor"
         
         # contains name of current process
         self.current_job = "Milling"
         
         # contains tool life specified by supplier
-        self.spec_toollife = "200 CT"
+        self.spec_toollife = "0 CT"
 
-        self.job_time_remaining = 1200
+        self.job_time_remaining = 0
 
         # contains estimated tool life in seconds, initially same as specified
-        self.est_toollife = 12345
+        self.est_toollife = 100
 
         # bool value containing machine running status
         self.machine_running = 1
@@ -54,26 +54,20 @@ def check_machine_status(status):
         vars.button_color = "red"
         return "Idle"
 
-# Load Data
-imu_df = pd.read_csv("IMU_data.csv", names=["Index", "Accel_X", "Accel_Y", "Accel_Z", "Timestamp"])
-acoustic_df = pd.read_csv("acoustic_data.csv", delimiter="\t", names=["RawData"])
+# Load IMU Data
+imu_df = pd.read_csv("imu_lab_lab_sample_1.csv")
+imu_df["Timestamp"] = imu_df["epoch"].astype(float) / 1000  # convert ms to seconds
+imu_df.rename(columns={
+    "X (g)": "Accel_X",
+    "Y (g)": "Accel_Y",
+    "Z (g)": "Accel_Z"
+}, inplace=True)
 
-# Split the RawData column into separate fields
-acoustic_df[["Timestamp", "Frequency", "Amplitude"]] = acoustic_df["RawData"].str.split(',', expand=True)
-acoustic_df.drop(columns=["RawData"], inplace=True)
+# Load Acoustic Data
+acoustic_df = pd.read_csv("audio_lab_lab_sample_1.csv")
+acoustic_df["Timestamp"] = acoustic_df["Time(s)"]
 
-# Convert Timestamp column to datetime
-acoustic_df["Timestamp"] = pd.to_datetime(acoustic_df["Timestamp"], errors='coerce')
-
-# Drop any rows where timestamp conversion failed
-acoustic_df = acoustic_df.dropna().reset_index(drop=True)
-
-# Convert timestamps to numeric (seconds since start)
-acoustic_df["Timestamp"] = (acoustic_df["Timestamp"] - acoustic_df["Timestamp"].iloc[0]).dt.total_seconds()
-imu_df["Timestamp"] = imu_df["Timestamp"].astype(float) / 1000  # Convert to seconds
-
-# Convert Frequency and Amplitude to float
-acoustic_df["Frequency"] = acoustic_df["Frequency"].astype(float)
+# Ensure correct numeric types
 acoustic_df["Amplitude"] = acoustic_df["Amplitude"].astype(float)
 
 # Sampling Rates
@@ -127,7 +121,7 @@ life_inner_frame.pack(expand=True, fill="x")
 countdown_label = ctk.CTkLabel(life_inner_frame, text=f"Est. Toollife Remaining: \n {seconds_to_hms(vars.est_toollife)}", text_color="red", font=("Arial", 28, "bold"))
 countdown_label.pack(pady=10)
 
-life_progress = ctk.CTkProgressBar(life_inner_frame, width=350, height=25)
+life_progress = ctk.CTkProgressBar(life_inner_frame, width=500, height=50)
 life_progress.pack(pady=60, padx=20, fill="x", expand=True)
 life_progress.set(0.40)
 
@@ -149,7 +143,7 @@ def create_plot_frame(title, row, column, num_subplots=1):
     if num_subplots == 1:
         axes = [axes]
     for ax in axes:
-        ax.set_facecolor("#1a1a1a")  # Inner plot background
+        ax.set_facecolor("white")  # Inner plot background
         ax.tick_params(colors='white')  # Tick color
         ax.xaxis.label.set_color('white')  # X label color
         ax.yaxis.label.set_color('white')  # Y label color
@@ -267,8 +261,18 @@ def update_graphs():
 
         time.sleep(imu_sampling_interval)  # Controls the update rate
 
+def update_est_toollife_timer():
+    if vars.est_toollife > 0:
+        vars.est_toollife -= 1
+        countdown_label.configure(text=f"Est. Toollife Remaining: \n {seconds_to_hms(vars.est_toollife)}")
+        app.after(1000, update_est_toollife_timer)
+    else:
+        countdown_label.configure(text="Tool Life Expired", text_color="red")
+
 # Start Real-Time Graph Update Thread
 threading.Thread(target=update_graphs, daemon=True).start()
+
+update_est_toollife_timer()
 
 # Run App
 app.mainloop()
